@@ -1,37 +1,67 @@
 const pool = require('../config/database');
 const bcrypt = require('bcryptjs');
+const Role = require('./Role');
 
 class User
 {
     static async findByEmail(email)
     {
-        const [rows] = await pool.execute(
+        const [users] = await pool.execute(
             'SELECT * FROM users WHERE email = ?',
             [email]
         );
-        return rows[0];
+
+        if (!users.length) return null;
+
+        const user = users[0];
+        const roles = await Role.getUserRoles(user.id);
+
+        return {
+            ...user,
+            roles: roles.map(role => role.role_name)
+        };
     }
 
     static async findById(id)
     {
-        const [rows] = await pool.execute(
-            'SELECT id, name, email, role, created_at FROM users WHERE id = ?',
+        const [users] = await pool.execute(
+            'SELECT id, name, email, created_at FROM users WHERE id = ?',
             [id]
         );
-        return rows[0];
+
+        if (!users.length) return null;
+
+        const user = users[0];
+        const roles = await Role.getUserRoles(user.id);
+
+        return {
+            ...user,
+            roles: roles.map(role => role.role_name)
+        };
     }
 
     static async create(userData)
     {
-        const { name, email, password, role = 'user' } = userData;
+
+        const { name, email, password } = userData;
         const hashedPassword = await bcrypt.hash(password, 12);
 
-        const [result] = await pool.execute(
-            'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)',
-            [name, email, hashedPassword, role]
+        // Insert user
+        const [userResult] = await pool.execute(
+            'INSERT INTO users (name, email, password) VALUES (?, ?, ?)',
+            [name, email, hashedPassword]
         );
 
-        return this.findById(result.insertId);
+        const userId = userResult.insertId;
+
+        // Get and assign default role using Role model
+        const defaultRole = await Role.getDefaultCustomerRole();
+        await Role.assignUserRole(userId, defaultRole.id);
+
+        // Fetch the created user
+        return this.findById(userId);
+
+
     }
 
     static async updatePassword(userId, newPassword)

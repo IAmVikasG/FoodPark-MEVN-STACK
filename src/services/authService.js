@@ -5,13 +5,14 @@ const User = require('../models/User');
 const EmailService = require('./emailService');
 const CustomError = require('../utils/customError');
 const pool = require('../config/database');
+const logger = require('../utils/logger');
 
 class AuthService
 {
     static generateToken(user)
     {
         return jwt.sign(
-            { id: user.id, email: user.email, role: user.role },
+            { id: user.id, email: user.email, roles: user.roles },
             process.env.JWT_SECRET,
             { expiresIn: process.env.JWT_EXPIRE }
         );
@@ -22,16 +23,32 @@ class AuthService
         const existingUser = await User.findByEmail(userData.email);
         if (existingUser)
         {
-            throw new CustomError('Email already registered', 400);
+            throw CustomError.badRequest('Email already registered');
         }
 
-        const user = await User.create(userData);
-        const token = this.generateToken(user);
+        try
+        {
+            const user = await User.create(userData);
+            const token = this.generateToken(user);
 
-        // Send welcome email
-        await EmailService.sendWelcomeEmail(user.email, user.name);
+            // Send welcome email
+            await EmailService.sendWelcomeEmail(user.email, user.name);
 
-        return { user, token };
+            return {
+                user: {
+                    id: user.id,
+                    name: user.name,
+                    email: user.email,
+                    roles: user.roles,
+                    created_at: user.created_at
+                },
+                token
+            };
+        } catch (error)
+        {
+            logger.error('Registration error:', error);
+            throw CustomError.internal('Error during registration');
+        }
     }
 
     static async login(email, password)
@@ -39,17 +56,26 @@ class AuthService
         const user = await User.findByEmail(email);
         if (!user)
         {
-            throw new CustomError('Invalid credentials', 401);
+            throw CustomError.unauthorized('Invalid credentials');
         }
 
         const isPasswordValid = await bcrypt.compare(password, user.password);
         if (!isPasswordValid)
         {
-            throw new CustomError('Invalid credentials', 401);
+            throw CustomError.unauthorized('Invalid credentials');
         }
 
         const token = this.generateToken(user);
-        return { user, token };
+        return {
+            user: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                roles: user.roles,
+                created_at: user.created_at
+            },
+            token
+        };
     }
 
     static async forgotPassword(email)
@@ -93,7 +119,7 @@ class AuthService
 
         if (!rows[0])
         {
-            throw new CustomError('Invalid or expired reset token', 400);
+            throw new CustomError.badRequest('Invalid or expired reset token');
         }
 
         await User.updatePassword(rows[0].id, newPassword);
