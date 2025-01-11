@@ -2,7 +2,7 @@ const express = require('express');
 const AuthController = require('../controllers/authController');
 const validateRequest = require('../middleware/requestValidator');
 const { authValidation } = require('../utils/validation');
-const auth = require('../middleware/auth');
+const { authenticate } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -27,7 +27,7 @@ router.post('/reset-password',
 );
 
 router.get('/profile',
-    auth,
+    authenticate,
     AuthController.getProfile
 );
 

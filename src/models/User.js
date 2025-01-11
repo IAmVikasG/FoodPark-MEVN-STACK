@@ -4,6 +4,32 @@ const Role = require('./Role');
 
 class User
 {
+    static async storeResetToken(userId, resetTokenHash)
+    {
+        await pool.execute(
+            'UPDATE users SET reset_token = ?, reset_token_expires = ? WHERE id = ?',
+            [resetTokenHash, new Date(Date.now() + 3600000), userId]
+        );
+    }
+
+    static async findByResetToken(resetTokenHash)
+    {
+        const [rows] = await pool.execute(
+            'SELECT id, reset_token_expires FROM users WHERE reset_token = ?',
+            [resetTokenHash]
+        );
+
+        return rows[0] || null;
+    }
+
+    static async clearResetToken(userId)
+    {
+        await pool.execute(
+            'UPDATE users SET reset_token = NULL, reset_token_expires = NULL WHERE id = ?',
+            [userId]
+        );
+    }
+
     static async findByEmail(email)
     {
         const [users] = await pool.execute(
@@ -42,7 +68,6 @@ class User
 
     static async create(userData)
     {
-
         const { name, email, password } = userData;
         const hashedPassword = await bcrypt.hash(password, 12);
 
@@ -60,7 +85,6 @@ class User
 
         // Fetch the created user
         return this.findById(userId);
-
 
     }
 

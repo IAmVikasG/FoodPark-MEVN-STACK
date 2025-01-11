@@ -4,7 +4,6 @@ const crypto = require('crypto');
 const User = require('../models/User');
 const EmailService = require('./emailService');
 const CustomError = require('../utils/customError');
-const pool = require('../config/database');
 const logger = require('../utils/logger');
 
 class AuthService
@@ -93,11 +92,8 @@ class AuthService
             .update(resetToken)
             .digest('hex');
 
-        // Store reset token in database (you'll need to add this field)
-        await pool.execute(
-            'UPDATE users SET reset_token = ?, reset_token_expires = ? WHERE id = ?',
-            [resetTokenHash, new Date(Date.now() + 3600000), user.id]
-        );
+        // Use model method to update the reset token
+        await User.storeResetToken(user.id, resetTokenHash);
 
         await EmailService.sendPasswordResetEmail(
             user.email,
@@ -112,23 +108,23 @@ class AuthService
             .update(token)
             .digest('hex');
 
-        const [rows] = await pool.execute(
-            'SELECT id FROM users WHERE reset_token = ? AND reset_token_expires > ?',
-            [resetTokenHash, new Date()]
-        );
+        const user = await User.findByResetToken(resetTokenHash);
 
-        if (!rows[0])
+        if (!user || user.reset_token_expires < new Date())
         {
             throw new CustomError.badRequest('Invalid or expired reset token');
         }
 
-        await User.updatePassword(rows[0].id, newPassword);
+        await User.updatePassword(user.id, newPassword);
 
-        // Clear reset token
-        await pool.execute(
-            'UPDATE users SET reset_token = NULL, reset_token_expires = NULL WHERE id = ?',
-            [rows[0].id]
-        );
+        await User.clearResetToken(user.id);
+    }
+
+    static async getProfile(userId)
+    {
+        const user = User.findById(userId);
+        if (!user) throw new CustomError('User not found', 401);
+        return user;
     }
 }
 

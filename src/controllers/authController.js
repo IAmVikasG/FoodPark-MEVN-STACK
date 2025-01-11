@@ -49,7 +49,8 @@ class AuthController
 
     static getProfile = asyncHandler(async (req, res) =>
     {
-        return ResponseFormatter.success(res, { user: req.user });
+        const user = await AuthService.getProfile(req.userId);
+        return ResponseFormatter.success(res, user);
     });
 }
 

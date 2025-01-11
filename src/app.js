@@ -2,11 +2,12 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const morgan = require('morgan');
 require('dotenv').config();
 
 const errorHandler = require('./middleware/errorHandler');
 const authRoutes = require('./routes/auth.routes');
-// const userRoutes = require('./routes/user.routes');
+const sliderRoutes = require('./routes/slider.routes');
 
 const app = express();
 
@@ -16,7 +17,7 @@ if (!process.env.PORT)
     console.error('Error: PORT environment variable is not defined.');
     process.exit(1);
 }
-
+app.use(morgan('dev'));
 // Security Middleware
 app.use(helmet());
 app.use(cors({
@@ -37,7 +38,7 @@ app.use(limiter);
 
 // Routes
 app.use('/api/auth', authRoutes);
-// app.use('/api/users', userRoutes);
+app.use('/api/sliders', sliderRoutes);
 
 // Error Handler
 app.use(errorHandler);
