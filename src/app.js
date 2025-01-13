@@ -9,6 +9,7 @@ const errorHandler = require('./middleware/errorHandler');
 const authRoutes = require('./routes/auth.routes');
 const sliderRoutes = require('./routes/slider.routes');
 const roleRoutes = require('./routes/role.routes');
+const permissionRoutes = require('./routes/permission.routes');
 
 const app = express();
 
@@ -41,6 +42,7 @@ app.use(limiter);
 app.use('/api/auth', authRoutes);
 app.use('/api/sliders', sliderRoutes);
 app.use('/api/roles', roleRoutes);
+app.use('/api/permissions', permissionRoutes);
 
 // Error Handler
 app.use(errorHandler);
