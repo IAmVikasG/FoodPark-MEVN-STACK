@@ -8,6 +8,7 @@ require('dotenv').config();
 const errorHandler = require('./middleware/errorHandler');
 const authRoutes = require('./routes/auth.routes');
 const sliderRoutes = require('./routes/slider.routes');
+const roleRoutes = require('./routes/role.routes');
 
 const app = express();
 
@@ -39,6 +40,7 @@ app.use(limiter);
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/sliders', sliderRoutes);
+app.use('/api/roles', roleRoutes);
 
 // Error Handler
 app.use(errorHandler);

@@ -65,4 +65,16 @@ const sliderValidation = {
     })
 };
 
-module.exports = { authValidation, sliderValidation };
+const roleValidation = {
+    create: Joi.object({
+        name: Joi.string().min(3).max(100).required(),
+        description: Joi.string().min(10).max(500).optional(),
+    }),
+
+    update: Joi.object({
+        name: Joi.string().min(3).max(100).optional(),
+        description: Joi.string().min(10).max(500).optional(),
+    })
+};
+
+module.exports = { authValidation, sliderValidation, roleValidation };
