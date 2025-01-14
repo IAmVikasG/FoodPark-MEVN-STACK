@@ -20,8 +20,7 @@ class RoleService
     {
         try
         {
-            const { name, description } = data;
-            return await Role.create({ name, description });
+            return await Role.create(data);
         } catch (error)
         {
             logger.error("Error creating role:", error);
@@ -39,8 +38,7 @@ class RoleService
                 throw new CustomError("Role not found", 404);
             }
 
-            await Role.update(id, data);
-            return await Role.findById(id); // Return updated role
+            return await Role.update(id, data);
         } catch (error)
         {
             logger.error("Error updating role:", error);

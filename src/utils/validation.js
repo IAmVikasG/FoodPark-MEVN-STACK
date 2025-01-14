@@ -89,9 +89,34 @@ const permissionValidation = {
     })
 };
 
+const couponValidation = {
+    create: Joi.object({
+        name: Joi.string().min(3).max(255).required(),
+        code: Joi.string().min(3).max(100).required(),
+        quantity: Joi.number().integer().positive().required(),
+        minimum_purchase_price: Joi.number().positive().optional(),
+        expiry: Joi.date().greater('now').required(),
+        discount_type: Joi.string().valid('percentage', 'fixed').required(),
+        discount_amount: Joi.number().positive().required(),
+        status: Joi.string().valid('active', 'inactive').optional(),
+    }),
+
+    update: Joi.object({
+        name: Joi.string().min(3).max(255).optional(),
+        code: Joi.string().min(3).max(100).optional(),
+        quantity: Joi.number().integer().positive().optional(),
+        minimum_purchase_price: Joi.number().positive().optional(),
+        expiry: Joi.date().greater('now').optional(),
+        discount_type: Joi.string().valid('percentage', 'fixed').optional(),
+        discount_amount: Joi.number().positive().optional(),
+        status: Joi.string().valid('active', 'inactive').optional(),
+    }),
+};
+
 module.exports = {
     authValidation,
     sliderValidation,
     roleValidation,
-    permissionValidation
+    permissionValidation,
+    couponValidation
 };

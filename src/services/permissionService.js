@@ -20,8 +20,7 @@ class PermissionService
     {
         try
         {
-            const { name, description } = data;
-            return await Permission.create({ name, description });
+            return await Permission.create(data);
         } catch (error)
         {
             logger.error("Error creating permission:", error);
@@ -39,8 +38,7 @@ class PermissionService
                 throw new CustomError("Permission not found", 404);
             }
 
-            await Permission.update(id, data);
-            return await Permission.findById(id); // Return updated permission
+            return await Permission.update(id, data);
         } catch (error)
         {
             logger.error("Error updating permission:", error);
