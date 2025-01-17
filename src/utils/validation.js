@@ -113,10 +113,29 @@ const couponValidation = {
     }),
 };
 
+const categoryValidation = {
+    create: Joi.object({
+        name: Joi.string().min(3).max(100).required(),
+        slug: Joi.string().required(),
+        description: Joi.string().optional(),
+        parent_id: Joi.number().integer().optional().allow(null),
+        status: Joi.string().valid('active', 'inactive').required()
+    }),
+
+    update: Joi.object({
+        name: Joi.string().min(3).max(100).optional(),
+        slug: Joi.string().optional(),
+        description: Joi.string().optional(),
+        parent_id: Joi.number().integer().optional().allow(null),
+        status: Joi.string().valid('active', 'inactive').optional()
+    })
+};
+
 module.exports = {
     authValidation,
     sliderValidation,
     roleValidation,
     permissionValidation,
-    couponValidation
+    couponValidation,
+    categoryValidation
 };

@@ -11,6 +11,7 @@ const sliderRoutes = require('./routes/slider.routes');
 const roleRoutes = require('./routes/role.routes');
 const permissionRoutes = require('./routes/permission.routes');
 const couponRoutes = require('./routes/coupon.routes');
+const productCategoryRoutes = require('./routes/productCategory.routes');
 
 const app = express();
 
@@ -45,6 +46,7 @@ app.use('/api/sliders', sliderRoutes);
 app.use('/api/roles', roleRoutes);
 app.use('/api/permissions', permissionRoutes);
 app.use('/api/coupons', couponRoutes);
+app.use('/api/product-categories', productCategoryRoutes);
 
 // Error Handler
 app.use(errorHandler);
