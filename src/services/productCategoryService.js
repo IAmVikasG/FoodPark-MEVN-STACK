@@ -1,9 +1,34 @@
 const Category = require('../models/ProductCategory');
 const CustomError = require('../utils/customError');
 const logger = require("../utils/logger");
+const HierarchyHelper = require("../helpers/hierarchyHelper");
 
 class ProductCategoryService
 {
+
+    static async getAllChildrenCategories(parentId)
+    {
+        try
+        {
+            return await HierarchyHelper.getAllChildren(parentId, Category.fetchChildren);
+        } catch (error)
+        {
+            logger.error('Error retrieving all children categories:', error);
+            throw new CustomError('Failed to retrieve all children categories', 500);
+        }
+    }
+
+    static async getAllParentCategories(childId)
+    {
+        try
+        {
+            return await HierarchyHelper.getAllParents(childId, Category.fetchParent);
+        } catch (error)
+        {
+            logger.error('Error retrieving all parent categories:', error);
+            throw new CustomError('Failed to retrieve all parent categories', 500);
+        }
+    }
 
     static async getAllCategories(options)
     {

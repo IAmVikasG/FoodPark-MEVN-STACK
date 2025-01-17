@@ -74,6 +74,26 @@ class ProductCategory
         const [result] = await pool.execute('DELETE FROM product_categories WHERE id = ?', [id]);
         return result.affectedRows > 0;
     }
+
+    // Fetch function to get children from the database
+    static async fetchChildren(parentId)
+    {
+        const [rows] = await pool.execute(
+            'SELECT * FROM product_categories WHERE parent_id = ?',
+            [parentId]
+        );
+        return rows;
+    };
+
+    // Fetch function to get a parent from the database
+    static async fetchParent(childId)
+    {
+        const [rows] = await pool.execute(
+            'SELECT * FROM product_categories WHERE id = (SELECT parent_id FROM product_categories WHERE id = ?)',
+            [childId]
+        );
+        return rows[0];
+    };
 }
 
 module.exports = ProductCategory;
