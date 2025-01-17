@@ -1,5 +1,5 @@
 const express = require('express');
-const CategoryController = require('../controllers/categoryController');
+const ProductCategoryController = require('../controllers/productCategoryController');
 const { authenticate, authorize } = require('../middleware/auth');
 
 
@@ -8,25 +8,25 @@ const router = express.Router();
 router.get('/',
     authenticate,
     authorize('admin'),
-    CategoryController.index
+    ProductCategoryController.index
 );
 
 router.post('/',
     authenticate,
     authorize('admin'),
-    CategoryController.store
+    ProductCategoryController.store
 );
 
 router.put('/:id',
     authenticate,
     authorize('admin'),
-    CategoryController.update
+    ProductCategoryController.update
 );
 
 router.delete('/:id',
     authenticate,
     authorize('admin'),
-    CategoryController.delete
+    ProductCategoryController.delete
 );
 
 

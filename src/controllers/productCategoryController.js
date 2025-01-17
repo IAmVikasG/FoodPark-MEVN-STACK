@@ -4,16 +4,21 @@ const ResponseFormatter = require('../utils/responseFormatter');
 const { categoryValidation } = require('../utils/validation');
 const validateRequest = require('../middleware/requestValidator');
 
-class CategoryController
+class ProductCategoryController
 {
     static index = asyncHandler(async (req, res) =>
     {
-        const categories = await CategoryService.index();
-        return ResponseFormatter.success(
-            res,
-            categories,
-            'Categories retrieved successfully'
-        );
+        const options = {
+            page: req.query.page,
+            perPage: req.query.perPage,
+            searchQuery: req.query.search,
+            orderBy: req.query.orderBy,
+            orderDirection: req.query.orderDirection,
+            filters: req.query.filters ? JSON.parse(req.query.filters) : {},
+        };
+
+        const categories = await CategoryService.getAllCategories(options);
+        return ResponseFormatter.success(res, categories, 'Categories retrieved successfully');
     });
 
     static store = asyncHandler(async (req, res) =>
@@ -54,4 +59,4 @@ class CategoryController
     });
 }
 
-module.exports = CategoryController;
+module.exports = ProductCategoryController;

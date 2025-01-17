@@ -1,11 +1,35 @@
 const pool = require('../config/database');
+const PaginationHelper = require('../helpers/paginationHelper');
 
 class ProductCategory
 {
-    static async getAll()
+    /**
+     * Get paginated categories
+     * @param {object} options - Options for pagination, search, and filters
+     * @returns {object} Paginated response
+     */
+    static async getAll(options)
     {
-        const [rows] = await pool.execute('SELECT * FROM product_categories');
-        return rows;
+        const pagination = new PaginationHelper(options);
+
+        // Generate WHERE clause and parameters
+        const { whereClause, params } = pagination.getWhereClause(['name', 'description']);
+
+        // Query to count total records
+        const [countRows] = await pool.execute(
+            `SELECT COUNT(*) as total FROM product_categories ${whereClause}`,
+            params
+        );
+        const totalRecords = countRows[0].total;
+
+        // Query to fetch paginated data
+        const [data] = await pool.execute(
+            `SELECT * FROM product_categories ${whereClause} ${pagination.getOrderByClause()} ${pagination.getLimitOffset()}`,
+            params
+        );
+
+        // Format and return paginated response
+        return pagination.formatResponse(data, totalRecords);
     }
 
     static async create(data)

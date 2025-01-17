@@ -1,8 +1,22 @@
 const Category = require('../models/ProductCategory');
 const CustomError = require('../utils/customError');
+const logger = require("../utils/logger");
 
 class ProductCategoryService
 {
+
+    static async getAllCategories(options)
+    {
+        try
+        {
+            return await Category.getAll(options);
+        } catch (error)
+        {
+            logger.error('Error retrieving categories:', error);
+            throw new CustomError('Failed to retrieve categories', 500);
+        }
+    }
+
     static async index()
     {
         try
