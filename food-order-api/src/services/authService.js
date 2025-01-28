@@ -2,19 +2,123 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const User = require('../models/User');
+const RefreshToken = require('../models/RefreshToken');
 const EmailService = require('./emailService');
 const CustomError = require('../utils/customError');
 const logger = require('../utils/logger');
 
 class AuthService
 {
-    static generateToken(user)
+    static generateTokens(user)
     {
-        return jwt.sign(
+        const accessToken = jwt.sign(
             { id: user.id, email: user.email, roles: user.roles },
             process.env.JWT_SECRET,
-            { expiresIn: process.env.JWT_EXPIRE }
+            { expiresIn: process.env.JWT_ACCESS_EXPIRE || '15m' }
         );
+
+        const refreshToken = jwt.sign(
+            { id: user.id },
+            process.env.JWT_REFRESH_SECRET,
+            { expiresIn: process.env.JWT_REFRESH_EXPIRE || '7d' }
+        );
+
+        return { accessToken, refreshToken };
+    }
+
+    static async login(email, password)
+    {
+        const user = await User.findByEmail(email);
+        if (!user)
+        {
+            throw CustomError.unauthorized('Invalid credentials');
+        }
+
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid)
+        {
+            throw CustomError.unauthorized('Invalid credentials');
+        }
+
+        const { accessToken, refreshToken } = this.generateTokens(user);
+
+        // Store refresh token in database
+        await RefreshToken.create({
+            user_id: user.id,
+            token: refreshToken,
+            expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
+        });
+
+        return {
+            user: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                roles: user.roles,
+                created_at: user.created_at
+            },
+            accessToken,
+            refreshToken
+        };
+    }
+
+    static async refreshToken(refreshToken)
+    {
+        try
+        {
+            // Verify refresh token
+            const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+
+            // Check if token exists in database and is not expired
+            const storedToken = await RefreshToken.findValidToken(refreshToken);
+            if (!storedToken)
+            {
+                throw CustomError.unauthorized('Invalid refresh token');
+            }
+
+            const user = await User.findById(decoded.id);
+            if (!user)
+            {
+                throw CustomError.unauthorized('User not found');
+            }
+
+            // Generate new tokens
+            const tokens = this.generateTokens(user);
+
+            // Update refresh token in database
+            await RefreshToken.update(storedToken.id, {
+                token: tokens.refreshToken,
+                expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+            });
+
+            return tokens;
+        } catch (error)
+        {
+            throw CustomError.unauthorized('Invalid refresh token');
+        }
+    }
+
+    static async logout(refreshToken, userId)
+    {
+        const token = await RefreshToken.findValidToken(refreshToken);
+
+        if (!token)
+        {
+            throw CustomError.badRequest('Invalid refresh token');
+        }
+
+        // Verify the token belongs to the user making the request
+        if (token.user_id !== userId)
+        {
+            throw CustomError.unauthorized('Unauthorized to invalidate this token');
+        }
+
+        await RefreshToken.delete(refreshToken);
+    }
+
+    static async logoutAll(userId)
+    {
+        await RefreshToken.deleteAllForUser(userId);
     }
 
     static async register(userData)
@@ -48,33 +152,6 @@ class AuthService
             logger.error('Registration error:', error);
             throw CustomError.internal('Error during registration');
         }
-    }
-
-    static async login(email, password)
-    {
-        const user = await User.findByEmail(email);
-        if (!user)
-        {
-            throw CustomError.unauthorized('Invalid credentials');
-        }
-
-        const isPasswordValid = await bcrypt.compare(password, user.password);
-        if (!isPasswordValid)
-        {
-            throw CustomError.unauthorized('Invalid credentials');
-        }
-
-        const token = this.generateToken(user);
-        return {
-            user: {
-                id: user.id,
-                name: user.name,
-                email: user.email,
-                roles: user.roles,
-                created_at: user.created_at
-            },
-            token
-        };
     }
 
     static async forgotPassword(email)

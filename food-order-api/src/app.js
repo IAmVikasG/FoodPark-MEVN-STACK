@@ -25,7 +25,7 @@ app.use(morgan('dev'));
 // Security Middleware
 app.use(helmet());
 app.use(cors({
-    origin: ['http://your-frontend-domain.com'], // Adjust to your allowed domains
+    origin: [process.env.FRONTEND_URL], // Adjust to your allowed domains
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true,
 }));

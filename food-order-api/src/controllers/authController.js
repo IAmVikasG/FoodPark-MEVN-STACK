@@ -4,6 +4,17 @@ const ResponseFormatter = require('../utils/responseFormatter');
 
 class AuthController
 {
+    static refreshToken = asyncHandler(async (req, res) =>
+    {
+        const { refreshToken: requestedRefreshToken } = req.body;
+        const { accessToken, refreshToken } = await AuthService.refreshToken(requestedRefreshToken);
+        return ResponseFormatter.success(
+            res,
+            { access_token: accessToken, refresh_token: refreshToken },
+            'Tokens refreshed successfully'
+        );
+    });
+
     static register = asyncHandler(async (req, res) =>
     {
         const { user, token } = await AuthService.register(req.body);
@@ -18,10 +29,10 @@ class AuthController
     static login = asyncHandler(async (req, res) =>
     {
         const { email, password } = req.body;
-        const { user, token } = await AuthService.login(email, password);
+        const { user, accessToken, refreshToken } = await AuthService.login(email, password);
         return ResponseFormatter.success(
             res,
-            { user, token },
+            { user, accessToken, refreshToken },
             'Login successful'
         );
     });
@@ -51,6 +62,27 @@ class AuthController
     {
         const user = await AuthService.getProfile(req.userId);
         return ResponseFormatter.success(res, user);
+    });
+
+    static logout = asyncHandler(async (req, res) =>
+    {
+        const { refreshToken } = req.body;
+        await AuthService.logout(refreshToken, req.userId);
+        return ResponseFormatter.success(
+            res,
+            null,
+            'Logged out successfully'
+        );
+    });
+
+    static logoutAll = asyncHandler(async (req, res) =>
+    {
+        await AuthService.logoutAll(req.userId);
+        return ResponseFormatter.success(
+            res,
+            null,
+            'Logged out from all devices successfully'
+        );
     });
 }
 

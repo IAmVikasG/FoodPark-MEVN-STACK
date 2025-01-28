@@ -31,4 +31,22 @@ router.get('/profile',
     AuthController.getProfile
 );
 
+// New refresh token route
+router.post('/refresh-token',
+    validateRequest(authValidation.refreshToken),
+    AuthController.refreshToken
+);
+
+// New logout routes
+router.post('/logout',
+    authenticate,
+    validateRequest(authValidation.logout),
+    AuthController.logout
+);
+
+router.post('/logout-all',
+    authenticate,
+    AuthController.logoutAll
+);
+
 module.exports = router;
