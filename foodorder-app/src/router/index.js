@@ -1,6 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '@/store/authStore';
-import { jwtDecode } from 'jwt-decode';
 
 const routes = [
     {
@@ -36,19 +35,6 @@ const router = createRouter({
     routes,
 });
 
-const checkTokenExpiry = (token) =>
-{
-    if (!token) return true;
-    try
-    {
-        const decoded = jwtDecode(token);
-        return decoded.exp < Date.now() / 1000;
-    } catch
-    {
-        return true;
-    }
-};
-
 router.beforeEach(async (to, from, next) =>
 {
     const authStore = useAuthStore();
@@ -58,7 +44,7 @@ router.beforeEach(async (to, from, next) =>
     // Handle login route access
     if (to.name === 'admin.login')
     {
-        if (authStore.accessToken && !checkTokenExpiry(authStore.accessToken))
+        if (authStore.accessToken)
         {
             return next({ name: 'admin.dashboard' });
         }
@@ -69,29 +55,11 @@ router.beforeEach(async (to, from, next) =>
 
     try
     {
-        const isAccessTokenExpired = checkTokenExpiry(authStore.accessToken);
-        const isRefreshTokenExpired = checkTokenExpiry(authStore.refreshToken);
-
-        // Logout if both tokens are expired
-        if (isAccessTokenExpired && isRefreshTokenExpired)
-        {
-            await authStore.logout();
-            return next({ name: 'admin.login' });
-        }
-
-        // Refresh token if the access token is expired but the refresh token is valid
-        if (isAccessTokenExpired)
-        {
-            await authStore.refreshAccessToken();
-        }
-
-        // Fetch user info if not already loaded
         if (!authStore.user)
         {
             await authStore.fetchUserInfo();
         }
 
-        // Check for role-based access
         if (requiresAdminOrVendor)
         {
             const roles = authStore.user?.roles || [];
