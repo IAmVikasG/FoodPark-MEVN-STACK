@@ -10,7 +10,7 @@ class AuthController
         const { accessToken, refreshToken } = await AuthService.refreshToken(requestedRefreshToken);
         return ResponseFormatter.success(
             res,
-            { access_token: accessToken, refresh_token: refreshToken },
+            { accessToken, refreshToken },
             'Tokens refreshed successfully'
         );
     });

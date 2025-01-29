@@ -31,13 +31,13 @@ class AuthService
         const user = await User.findByEmail(email);
         if (!user)
         {
-            throw CustomError.unauthorized('Invalid credentials');
+            throw CustomError.notFound('User not found');
         }
 
         const isPasswordValid = await bcrypt.compare(password, user.password);
         if (!isPasswordValid)
         {
-            throw CustomError.unauthorized('Invalid credentials');
+            throw CustomError.badRequest('Invalid password');
         }
 
         const { accessToken, refreshToken } = this.generateTokens(user);
@@ -73,13 +73,13 @@ class AuthService
             const storedToken = await RefreshToken.findValidToken(refreshToken);
             if (!storedToken)
             {
-                throw CustomError.unauthorized('Invalid refresh token');
+                throw CustomError.badRequest('Invalid refresh token');
             }
 
             const user = await User.findById(decoded.id);
             if (!user)
             {
-                throw CustomError.unauthorized('User not found');
+                throw CustomError.notFound('User not found');
             }
 
             // Generate new tokens
@@ -94,7 +94,7 @@ class AuthService
             return tokens;
         } catch (error)
         {
-            throw CustomError.unauthorized('Invalid refresh token');
+            throw CustomError.badRequest('Invalid refresh token');
         }
     }
 
@@ -110,7 +110,7 @@ class AuthService
         // Verify the token belongs to the user making the request
         if (token.user_id !== userId)
         {
-            throw CustomError.unauthorized('Unauthorized to invalidate this token');
+            throw CustomError.forbidden('Forbidden');
         }
 
         await RefreshToken.delete(refreshToken);
@@ -126,13 +126,13 @@ class AuthService
         const existingUser = await User.findByEmail(userData.email);
         if (existingUser)
         {
-            throw CustomError.badRequest('Email already registered');
+            throw CustomError.conflict('Email already registered');
         }
 
         try
         {
             const user = await User.create(userData);
-            const token = this.generateToken(user);
+            const token = this.generateTokens(user);
 
             // Send welcome email
             await EmailService.sendWelcomeEmail(user.email, user.name);
@@ -189,7 +189,7 @@ class AuthService
 
         if (!user || user.reset_token_expires < new Date())
         {
-            throw new CustomError.badRequest('Invalid or expired reset token');
+            throw CustomError.badRequest('Invalid or expired reset token');
         }
 
         await User.updatePassword(user.id, newPassword);
@@ -199,8 +199,11 @@ class AuthService
 
     static async getProfile(userId)
     {
-        const user = User.findById(userId);
-        if (!user) throw new CustomError('User not found', 401);
+        const user = await User.findById(userId);
+        if (!user)
+        {
+            throw CustomError.notFound('User not found');
+        }
         return user;
     }
 }

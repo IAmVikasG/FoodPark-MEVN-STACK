@@ -31,7 +31,6 @@ export const useAuthStore = defineStore('auth', {
                 {
                     handleApiError(error);
                 }
-                throw error;
             }
         },
 
@@ -39,9 +38,12 @@ export const useAuthStore = defineStore('auth', {
         {
             try
             {
-                const { accessToken } = await authService.refreshToken(this.refreshToken);
+                const { data: {accessToken, refreshToken} } = await authService.refreshToken(this.refreshToken);
                 this.accessToken = accessToken;
+                this.refreshToken = refreshToken;
+
                 localStorage.setItem('accessToken', accessToken);
+                localStorage.setItem('refreshToken', refreshToken);
             } catch (error)
             {
                 handleApiError(error);
@@ -53,7 +55,8 @@ export const useAuthStore = defineStore('auth', {
         {
             try
             {
-                this.user = await authService.getUserInfo();
+                const { data: user } = await authService.getUserInfo();
+                this.user = user;
             } catch (error)
             {
                 handleApiError(error);
@@ -78,12 +81,5 @@ export const useAuthStore = defineStore('auth', {
                 localStorage.removeItem('refreshToken');
             }
         },
-    },
-    getters: {
-        isAuthenticated: (state) => !!state.accessToken,
-        isAdmin: (state) =>
-        {
-            return state.user?.roles?.some(role => role === 'admin') || false;
-        }
-    },
+    }
 });

@@ -1,5 +1,6 @@
 import axios from 'axios';
-import { useAuthStore } from '@/store/authStore'; // For Pinia
+import { useAuthStore } from '@/store/authStore';
+import { handleApiError } from '../utils/helpers';
 
 const api = axios.create({
     baseURL: import.meta.env.VITE_APP_API_URL,
@@ -16,17 +17,16 @@ api.interceptors.request.use((config) =>
 });
 
 api.interceptors.response.use(
-    (response) => response,
-    async (error) =>
+    (response) => response, // Return successful responses as they are
+    (error) =>
     {
-        const originalRequest = error.config;
-        if (error.response.status === 401 && !originalRequest._retry)
+        // Handle network errors
+        if (error.code === 'ERR_NETWORK')
         {
-            originalRequest._retry = true;
-            const authStore = useAuthStore();
-            await authStore.refreshAccessToken();
-            return api(originalRequest);
+            handleApiError(error);
         }
+
+        // Handle other errors (no retry logic here)
         return Promise.reject(error);
     }
 );

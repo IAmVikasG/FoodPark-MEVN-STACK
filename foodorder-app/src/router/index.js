@@ -1,19 +1,21 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '@/store/authStore';
+import { jwtDecode } from 'jwt-decode';
 
 const routes = [
     {
         path: '/admin',
-        meta: { requiresAuth: true, requiresAdmin: true },
+        meta: { requiresAuth: true, requiresAdminOrVendor: true },
         children: [
             {
                 path: 'dashboard',
                 name: 'admin.dashboard',
                 component: () => import('@/views/admin/Dashboard.vue'),
-                meta: {
-                    title: 'Admin Dashboard',
-                    description: 'Awesome Description',
-                }
+            },
+            {
+                path: 'roles',
+                name: 'admin.roles.index',
+                component: () => import('@/views/admin/roles/Index.vue'),
             },
         ],
     },
@@ -21,10 +23,6 @@ const routes = [
         path: '/admin/login',
         name: 'admin.login',
         component: () => import('@/views/admin/auth/Login.vue'),
-        meta: {
-            title: 'Admin Login',
-            description: 'Admin Login Page'
-        }
     },
     {
         path: '/:pathMatch(.*)*',
@@ -38,31 +36,77 @@ const router = createRouter({
     routes,
 });
 
+const checkTokenExpiry = (token) =>
+{
+    if (!token) return true;
+    try
+    {
+        const decoded = jwtDecode(token);
+        return decoded.exp < Date.now() / 1000;
+    } catch
+    {
+        return true;
+    }
+};
+
 router.beforeEach(async (to, from, next) =>
 {
-    const { title, description } = to.meta;
-    const defaultTitle = 'Food order';
-    const defaultDescription = 'Default Description';
-
-    document.title = title || defaultTitle
-
-    const descriptionElement = document.querySelector('head meta[name="description"]')
-
-    descriptionElement.setAttribute('content', description || defaultDescription)
-
     const authStore = useAuthStore();
-    const requiresAuth = to.matched.some((record) => record.meta.requiresAuth);
-    const requiresAdmin = to.matched.some((record) => record.meta.requiresAdmin);
+    const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
+    const requiresAdminOrVendor = to.matched.some(record => record.meta.requiresAdminOrVendor);
 
-    if (requiresAuth && !authStore.isAuthenticated)
+    // Handle login route access
+    if (to.name === 'admin.login')
     {
-        next('/admin/login');
-    } else if (requiresAdmin && !authStore.isAdmin)
+        if (authStore.accessToken && !checkTokenExpiry(authStore.accessToken))
+        {
+            return next({ name: 'admin.dashboard' });
+        }
+        return next();
+    }
+
+    if (!requiresAuth) return next();
+
+    try
     {
-        next('/admin/login');
-    } else
+        const isAccessTokenExpired = checkTokenExpiry(authStore.accessToken);
+        const isRefreshTokenExpired = checkTokenExpiry(authStore.refreshToken);
+
+        // Logout if both tokens are expired
+        if (isAccessTokenExpired && isRefreshTokenExpired)
+        {
+            await authStore.logout();
+            return next({ name: 'admin.login' });
+        }
+
+        // Refresh token if the access token is expired but the refresh token is valid
+        if (isAccessTokenExpired)
+        {
+            await authStore.refreshAccessToken();
+        }
+
+        // Fetch user info if not already loaded
+        if (!authStore.user)
+        {
+            await authStore.fetchUserInfo();
+        }
+
+        // Check for role-based access
+        if (requiresAdminOrVendor)
+        {
+            const roles = authStore.user?.roles || [];
+            if (!roles.includes('admin') && !roles.includes('vendor'))
+            {
+                await authStore.logout();
+                return next({ name: 'admin.login' });
+            }
+        }
+
+        return next();
+    } catch (error)
     {
-        next();
+        await authStore.logout();
+        return next({ name: 'admin.login' });
     }
 });
 

@@ -42,6 +42,36 @@ class CustomError extends Error
     {
         return new CustomError(message, 500);
     }
+
+    static conflict(message = 'Conflict')
+    {
+        return new CustomError(message, 409);
+    }
+
+    static unprocessableEntity(message = 'Unprocessable Entity')
+    {
+        return new CustomError(message, 422);
+    }
+
+    static serviceUnavailable(message = 'Service Unavailable')
+    {
+        return new CustomError(message, 503);
+    }
+
+    static gatewayTimeout(message = 'Gateway Timeout')
+    {
+        return new CustomError(message, 504);
+    }
+
+    static methodNotAllowed(message = 'Method Not Allowed')
+    {
+        return new CustomError(message, 405);
+    }
+
+    static gone(message = 'Gone')
+    {
+        return new CustomError(message, 410);
+    }
 }
 
 module.exports = CustomError;
