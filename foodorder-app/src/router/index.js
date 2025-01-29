@@ -55,7 +55,7 @@ router.beforeEach(async (to, from, next) =>
 
     try
     {
-        if (!authStore.user)
+        if (!authStore.user && authStore.refreshToken)
         {
             await authStore.fetchUserInfo();
         }

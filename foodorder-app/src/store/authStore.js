@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import authService from '@/services/authService';
-import { handleApiError, handleValidationErrors, handleSuccess } from '@/utils/helpers.js';
+import { handleSuccess, handleError } from '@/utils/helpers.js';
 
 export const useAuthStore = defineStore('auth', {
     state: () => ({
@@ -24,13 +24,7 @@ export const useAuthStore = defineStore('auth', {
                 handleSuccess('Successfully logged in!');
             } catch (error)
             {
-                if (error.response.data.errors)
-                {
-                    handleValidationErrors(error.response.data.errors);
-                } else
-                {
-                    handleApiError(error);
-                }
+                handleError(error);
             }
         },
 
@@ -46,7 +40,7 @@ export const useAuthStore = defineStore('auth', {
                 localStorage.setItem('refreshToken', refreshToken);
             } catch (error)
             {
-                handleApiError(error);
+                handleError(error);
                 this.logout();
             }
         },
@@ -59,7 +53,7 @@ export const useAuthStore = defineStore('auth', {
                 this.user = user;
             } catch (error)
             {
-                handleApiError(error);
+                handleError(error);
             }
         },
 
@@ -67,11 +61,13 @@ export const useAuthStore = defineStore('auth', {
         {
             try
             {
-                await authService.logout(this.refreshToken);
-                handleSuccess('Successfully logged out.');
+                if (this.refreshToken) {
+                    await authService.logout(this.refreshToken);
+                    handleSuccess('Successfully logged out.');
+                }
             } catch (error)
             {
-                handleApiError(error);
+                handleError(error);
             } finally
             {
                 this.accessToken = null;

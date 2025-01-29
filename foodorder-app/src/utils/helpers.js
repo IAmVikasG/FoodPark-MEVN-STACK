@@ -12,14 +12,20 @@ export function handleValidationErrors(errors)
     toast.error('Validation Errors: \n' + errors.map(error => error.message).join("\n"));
 }
 
+export function handleError(error)
+{
+    if (error?.response?.data?.errors)
+    {
+        handleValidationErrors(error.response.data.errors);
+    } else
+    {
+        handleApiError(error);
+    }
+}
+
 export function handleSuccess(message)
 {
     toast.success(message);
-}
-
-export function handleError(message)
-{
-    toast.error(message);
 }
 
 export function handleInfo(message)

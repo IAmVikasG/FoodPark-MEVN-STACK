@@ -30,7 +30,22 @@
             <i class="fa fa-dashboard"></i> <span>Dashboard</span>
           </router-link>
         </li>
-        <!-- Add more menu items here -->
+        <li class="treeview">
+          <a href="#">
+            <i class="fa fa-users"></i>
+            <span>User Management</span>
+            <span class="pull-right-container">
+              <i class="fa fa-angle-left pull-right"></i>
+            </span>
+          </a>
+          <ul class="treeview-menu">
+            <li>
+              <router-link :to="{ name: 'admin.roles.index' }">
+                <i class="fa fa-circle-o"></i> Roles
+              </router-link>
+            </li>
+          </ul>
+        </li>
       </ul>
     </section>
   </aside>
@@ -38,8 +53,13 @@
 
 <script setup>
 import userImage from '@/assets/admin/dist/img/user2-160x160.jpg';
-</script>
+import { onMounted } from 'vue';
 
-<style scoped>
-/* Add custom styles if needed */
-</style>
+
+onMounted(() => {
+  $(document).ready(function ()
+  {
+    $(".sidebar-menu").tree();
+  });
+})
+</script>
