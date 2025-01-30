@@ -12,8 +12,8 @@ class ProductCategoryController
             page: req.query.page,
             perPage: req.query.perPage,
             searchQuery: req.query.search,
-            orderBy: req.query.orderBy,
-            orderDirection: req.query.orderDirection,
+            sortKey: req.query.sortKey,
+            sortDirection: req.query.sortDirection,
             filters: req.query.filters ? JSON.parse(req.query.filters) : {},
         };
 

@@ -11,7 +11,16 @@ class RoleController
      */
     static index = asyncHandler(async (req, res) =>
     {
-        const roles = await RoleService.index();
+        const options = {
+            page: req.query.page,
+            perPage: req.query.perPage,
+            searchQuery: req.query.search,
+            sortKey: req.query.sortKey,
+            sortDirection: req.query.sortDirection,
+            filters: req.query.filters ? JSON.parse(req.query.filters) : {},
+        };
+
+        const roles = await RoleService.index(options);
         return ResponseFormatter.success(
             res,
             roles,

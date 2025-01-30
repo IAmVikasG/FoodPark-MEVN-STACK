@@ -8,8 +8,8 @@ class PaginationHelper
      * @param {number} options.perPage - Number of items shown per page. Default is 10.
      * @param {string} options.searchQuery - Text to search for (optional).
      * @param {object} options.filters - Key-value pairs to filter data (optional).
-     * @param {string} options.orderBy - The column to sort by. Default is 'id'.
-     * @param {string} options.orderDirection - Sorting order ('asc' or 'desc'). Default is 'asc'.
+     * @param {string} options.sortKey - The column to sort by. Default is 'id'.
+     * @param {string} options.sortDirection - Sorting order ('asc' or 'desc'). Default is 'asc'.
      */
     constructor(options = {})
     {
@@ -18,8 +18,8 @@ class PaginationHelper
         this.perPage = parseInt(options.perPage) || 10;  // Items per page
         this.searchQuery = options.searchQuery || null; // Search term
         this.filters = options.filters || {};         // Filters
-        this.orderBy = options.orderBy || 'id';        // Sort column
-        this.orderDirection = options.orderDirection === 'desc' ? 'DESC' : 'ASC'; // Sort direction
+        this.sortKey = options.sortKey || 'id';        // Sort column
+        this.sortDirection = options.sortDirection === 'desc' ? 'DESC' : 'ASC'; // Sort direction
     }
 
     /**
@@ -75,9 +75,9 @@ class PaginationHelper
      *
      * @returns {string} The ORDER BY string for SQL.
      */
-    getOrderByClause()
+    getSortKeyClause()
     {
-        return `ORDER BY ${this.orderBy} ${this.orderDirection}`;
+        return `ORDER BY ${this.sortKey} ${this.sortDirection}`;
     }
 
     /**

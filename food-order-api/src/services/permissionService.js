@@ -4,11 +4,11 @@ const logger = require("../utils/logger");
 
 class PermissionService
 {
-    static async index()
+    static async index(options)
     {
         try
         {
-            return await Permission.get();
+            return await Permission.get(options);
         } catch (error)
         {
             logger.error("Error fetching permissions:", error);
@@ -18,6 +18,9 @@ class PermissionService
 
     static async create(data)
     {
+        const existingPermission = await Permission.findByName(data.name);
+        if (existingPermission) throw CustomError.conflict(`Permission already exists`);
+
         try
         {
             return await Permission.create(data);
@@ -30,14 +33,14 @@ class PermissionService
 
     static async update(id, data)
     {
+        const permission = await Permission.findById(id);
+        if (!permission) throw CustomError.notFound("Permission not found", 404);
+
+        const existingPermission = await Permission.findByName(data.name);
+        if (existingPermission && existingPermission.id !== id) throw CustomError.conflict(`Permission with name "${data.name}" already exists`);
+
         try
         {
-            const permission = await Permission.findById(id);
-            if (!permission)
-            {
-                throw new CustomError("Permission not found", 404);
-            }
-
             return await Permission.update(id, data);
         } catch (error)
         {

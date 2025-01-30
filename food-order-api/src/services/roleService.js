@@ -4,11 +4,11 @@ const logger = require("../utils/logger");
 
 class RoleService
 {
-    static async index()
+    static async index(options)
     {
         try
         {
-            return await Role.get();
+            return await Role.get(options);
         } catch (error)
         {
             logger.error("Error fetching roles:", error);

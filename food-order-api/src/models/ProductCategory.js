@@ -24,7 +24,7 @@ class ProductCategory
 
         // Query to fetch paginated data
         const [data] = await pool.execute(
-            `SELECT * FROM product_categories ${whereClause} ${pagination.getOrderByClause()} ${pagination.getLimitOffset()}`,
+            `SELECT * FROM product_categories ${whereClause} ${pagination.getSortKeyClause()} ${pagination.getLimitOffset()}`,
             params
         );
 

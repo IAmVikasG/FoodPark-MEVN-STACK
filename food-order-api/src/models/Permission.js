@@ -1,11 +1,34 @@
 const pool = require("../config/database");
+const PaginationHelper = require('../helpers/paginationHelper');
 
 class Permission
 {
-    static async get()
+    /**
+     * Get paginated categories
+     * @param {object} options - Options for pagination, search, and filters
+     * @returns {object} Paginated response
+     */
+    static async get(options)
     {
-        const [rows] = await pool.execute("SELECT * FROM permissions");
-        return rows;
+        const pagination = new PaginationHelper(options);
+        // Generate WHERE clause and parameters
+        const { whereClause, params } = pagination.getWhereClause(['name']);
+
+        // Query to count total records
+        const [countRows] = await pool.execute(
+            `SELECT COUNT(*) as total FROM permissions ${whereClause}`,
+            params
+        );
+        const totalRecords = countRows[0].total;
+
+        // Query to fetch paginated data
+        const [data] = await pool.execute(
+            `SELECT * FROM permissions ${whereClause} ${pagination.getSortKeyClause()} ${pagination.getLimitOffset()}`,
+            params
+        );
+
+        // Format and return paginated response
+        return pagination.formatResponse(data, totalRecords);
     }
 
     static async create(data)
