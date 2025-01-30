@@ -16,6 +16,11 @@ const routes = [
                 name: 'admin.roles.index',
                 component: () => import('@/views/admin/roles/Index.vue'),
             },
+            {
+                path: 'permissions',
+                name: 'admin.permissions.index',
+                component: () => import('@/views/admin/permissions/Index.vue'),
+            },
         ],
     },
     {
