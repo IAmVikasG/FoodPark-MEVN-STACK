@@ -1,68 +1,79 @@
 class PaginationHelper
 {
     /**
-     * @param {object} options - Options for pagination and filtering
-     * @param {number} options.page - Current page number (default: 1)
-     * @param {number} options.perPage - Results per page (default: 10)
-     * @param {string} options.searchQuery - Search keyword (optional)
-     * @param {object} options.filters - Filters for the query (key-value pairs)
-     * @param {string} options.orderBy - Column to order by
-     * @param {string} options.orderDirection - Order direction (asc/desc, default: asc)
+     * Helps create pagination for data.
+     *
+     * @param {object} options - Settings for pagination.
+     * @param {number} options.page - The current page number (starts from 1). Default is 1.
+     * @param {number} options.perPage - Number of items shown per page. Default is 10.
+     * @param {string} options.searchQuery - Text to search for (optional).
+     * @param {object} options.filters - Key-value pairs to filter data (optional).
+     * @param {string} options.orderBy - The column to sort by. Default is 'id'.
+     * @param {string} options.orderDirection - Sorting order ('asc' or 'desc'). Default is 'asc'.
      */
     constructor(options = {})
     {
-        this.page = parseInt(options.page) || 1;
-        this.perPage = parseInt(options.perPage) || 10;
-        this.searchQuery = options.searchQuery || null;
-        this.filters = options.filters || {};
-        this.orderBy = options.orderBy || 'id';
-        this.orderDirection = options.orderDirection === 'desc' ? 'DESC' : 'ASC';
+        // Use provided values or defaults
+        this.page = parseInt(options.page) || 1;       // Current page number
+        this.perPage = parseInt(options.perPage) || 10;  // Items per page
+        this.searchQuery = options.searchQuery || null; // Search term
+        this.filters = options.filters || {};         // Filters
+        this.orderBy = options.orderBy || 'id';        // Sort column
+        this.orderDirection = options.orderDirection === 'desc' ? 'DESC' : 'ASC'; // Sort direction
     }
 
     /**
-     * Get LIMIT and OFFSET values for SQL queries
-     * @returns {string} SQL LIMIT and OFFSET string
+     * Creates the LIMIT and OFFSET part for a database query.
+     * This tells the database which items to fetch for the current page.
+     *
+     * @returns {string} The LIMIT and OFFSET string for SQL.
      */
     getLimitOffset()
     {
-        const offset = (this.page - 1) * this.perPage;
-        return `LIMIT ${this.perPage} OFFSET ${offset}`;
+        const offset = (this.page - 1) * this.perPage; // Calculate how many items to skip
+        return `LIMIT ${this.perPage} OFFSET ${offset}`; // Build the SQL string
     }
 
     /**
-     * Generate WHERE clause for search and filters
-     * @param {Array<string>} searchableColumns - Columns to search on
-     * @returns {string} SQL WHERE clause
+     * Creates the WHERE clause for a database query, including search and filters.
+     * This tells the database which items to include based on search and filter criteria.
+     *
+     * @param {Array<string>} searchableColumns - The columns to search in.
+     * @returns {object} An object containing the WHERE clause string and an array of parameters.
      */
     getWhereClause(searchableColumns = [])
     {
-        const conditions = [];
-        const params = [];
+        const conditions = []; // Array to hold the individual conditions
+        const params = [];     // Array to hold the values for the conditions (prevents SQL injection)
 
-        // Add search condition
+        // Add search condition if there's a search query and columns to search in
         if (this.searchQuery && searchableColumns.length)
         {
             const searchCondition = searchableColumns
-                .map(column => `${column} LIKE ?`)
-                .join(' OR ');
-            conditions.push(`(${searchCondition})`);
-            params.push(...searchableColumns.map(() => `%${this.searchQuery}%`));
+                .map(column => `${column} LIKE ?`) // Create "column LIKE ?" for each searchable column
+                .join(' OR '); // Combine with OR (search in any of the columns)
+
+            conditions.push(`(${searchCondition})`); // Add the search condition to the array
+            params.push(...searchableColumns.map(() => `%${this.searchQuery}%`)); // Add the search value with wildcards
         }
 
-        // Add filters
+        // Add filter conditions
         for (const [key, value] of Object.entries(this.filters))
         {
-            conditions.push(`${key} = ?`);
-            params.push(value);
+            conditions.push(`${key} = ?`); // Create "key = ?" for each filter
+            params.push(value);         // Add the filter value to the array
         }
 
+        // Combine all conditions with AND
         const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
-        return { whereClause, params };
+        return { whereClause, params }; // Return the WHERE clause and the parameters
     }
 
     /**
-     * Generate ORDER BY clause
-     * @returns {string} SQL ORDER BY clause
+     * Creates the ORDER BY clause for a database query.
+     * This tells the database how to sort the results.
+     *
+     * @returns {string} The ORDER BY string for SQL.
      */
     getOrderByClause()
     {
@@ -70,22 +81,25 @@ class PaginationHelper
     }
 
     /**
-     * Format the paginated response
-     * @param {Array} data - Data for the current page
-     * @param {number} total - Total number of records
-     * @returns {object} Paginated response
+     * Formats the data for the current page into a nice object.
+     * Includes information about the current page, total pages, etc.
+     *
+     * @param {Array} data - The data for the current page.
+     * @param {number} total - The total number of items (across all pages).
+     * @returns {object} The formatted response object.
      */
     formatResponse(data, total)
     {
-        const totalPages = Math.ceil(total / this.perPage);
+        const totalPages = Math.ceil(total / this.perPage); // Calculate the total number of pages
+
         return {
-            currentPage: this.page,
-            perPage: this.perPage,
-            totalRecords: total,
-            totalPages,
-            data,
+            currentPage: this.page,       // Current page number
+            perPage: this.perPage,       // Items per page
+            totalRecords: total,       // Total number of items
+            totalPages: totalPages,       // Total number of pages
+            data: data,                 // The data for the current page
         };
     }
 }
 
-module.exports = PaginationHelper;
+module.exports = PaginationHelper; // Make the class available for use in other files
