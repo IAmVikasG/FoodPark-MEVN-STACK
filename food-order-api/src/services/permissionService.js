@@ -37,7 +37,8 @@ class PermissionService
         if (!permission) throw CustomError.notFound("Permission not found", 404);
 
         const existingPermission = await Permission.findByName(data.name);
-        if (existingPermission && existingPermission.id !== id) throw CustomError.conflict(`Permission with name "${data.name}" already exists`);
+
+        if (existingPermission && existingPermission.id != id) throw CustomError.conflict(`Permission with name "${data.name}" already exists`);
 
         try
         {

@@ -30,14 +30,15 @@ class RoleService
 
     static async update(id, data)
     {
+        const role = await Role.findById(id);
+        if (!role) throw CustomError.notFound("Role not found", 404);
+
+        const existingRole = await Role.findByName(data.name);
+
+        if (existingRole && existingRole.id != id) throw CustomError.conflict(`Role with name "${data.name}" already exists`);
+
         try
         {
-            const role = await Role.findById(id);
-            if (!role)
-            {
-                throw new CustomError("Role not found", 404);
-            }
-
             return await Role.update(id, data);
         } catch (error)
         {
