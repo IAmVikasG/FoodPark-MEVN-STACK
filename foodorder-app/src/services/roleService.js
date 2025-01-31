@@ -2,9 +2,9 @@ import api from '@/services/axios.js';
 
 const roleService = {
 
-    async fetchRoles()
+    async fetchRoles(params)
     {
-        const response = await api.get(`/roles`);
+        const response = await api.get(`/roles`, { params });
         return response.data;
     },
     async createRole(data)
