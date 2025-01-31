@@ -18,11 +18,11 @@
 
                     <DataTable :columns="columns" :data="roleStore.roles.data" :sortKey="sortKey"
                         :sortDirection="sortDirection" @sortFn="handleSort" class="table-bordered table-striped">
-                        <template #actions="{roleData}">
-                            <button class="btn btn-sm btn-info mr-2" @click="openEditModal(roleData)">
+                        <template #actions="{data}">
+                            <button class="btn btn-sm btn-info mr-2" @click="openEditModal(data)">
                                 <i class="fa fa-edit"></i> Edit
                             </button>
-                            <button class="btn btn-sm btn-danger" @click="openDeleteModal(roleData)">
+                            <button class="btn btn-sm btn-danger" @click="openDeleteModal(data)">
                                 <i class="fa fa-trash"></i> Delete
                             </button>
                         </template>
@@ -76,7 +76,7 @@ const showDeleteModal = ref(false);
 const editingRole = ref(null);
 const roleToDelete = ref(null);
 
-// Reactive state
+// Table Reactive state
 const currentPage = ref(1);
 const perPage = ref(10);
 const searchBox = ref('');
@@ -194,7 +194,7 @@ const createOrUpdateRole = handleSubmit(async (formValues) =>
         }
         showFormModal.value = false;
         resetForm(); // Clear form on success
-        await roleStore.fetchRoles();
+        await fetchRoles();
     } catch (error)
     {
         console.error('Error saving role:', error);
@@ -209,7 +209,7 @@ const handleDelete = async () =>
         await roleStore.deleteRole(roleToDelete.value.id);
         showDeleteModal.value = false;
         roleToDelete.value = null;
-        await roleStore.fetchRoles();
+        await fetchRoles();
     } catch (error)
     {
         console.error('Error deleting role:', error);

@@ -4,16 +4,28 @@ import { handleSuccess, handleError } from '@/utils/helpers.js';
 
 export const usePermissionStore = defineStore('permission', {
     state: () => ({
-        permissions: []
+        permissions: {
+            data: [],
+            currentPage: 1,
+            perPage: 10,
+            totalRecords: 0,
+            totalPages: 1
+        }
     }),
 
     actions: {
-        async fetchPermissions()
+        async fetchPermissions(params = {})
         {
             try
             {
-                const response = await permissionService.fetchPermissions();
-                this.permissions = response.data;
+                const { data: { data, currentPage, perPage, totalRecords, totalPages } } = await permissionService.fetchPermissions(params);
+                this.permissions = {
+                    data: data,
+                    currentPage: currentPage,
+                    perPage: perPage,
+                    totalRecords: totalRecords,
+                    totalPages: totalPages
+                };
                 handleSuccess('Permission fetched successfully.');
             } catch (error)
             {

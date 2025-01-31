@@ -12,33 +12,24 @@
 
             <!-- Permission List Table -->
             <div class="box-body">
-                <div v-if="!permissionStore.permissions.length" class="text-center">
-                    No permission available. Please add new permission.
-                </div>
-                <div v-else>
-                    <table class="table table-bordered">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Description</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-for="permission in permissionStore.permissions" :key="permission.id">
-                                <td>{{ permission.name }}</td>
-                                <td>{{ permission.description }}</td>
-                                <td>
-                                    <button class="btn btn-sm btn-info" @click="openEditModal(permission)">
-                                        <i class="fa fa-edit"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-danger" @click="openDeleteModal(permission)">
-                                        <i class="fa fa-trash"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <div class="form-inline">
+                    <TableControls v-model:searchBoxInputValue="searchBox" v-model:perPageValue="perPage"
+                        :perPageOptions="[10, 25, 50, 100]" @perPageFn="handlePerPageChange" />
+
+                    <DataTable :columns="columns" :data="permissionStore.permissions.data" :sortKey="sortKey"
+                        :sortDirection="sortDirection" @sortFn="handleSort" class="table-bordered table-striped">
+                        <template #actions="{ data }">
+                            <button class="btn btn-sm btn-info mr-2" @click="openEditModal(data)">
+                                <i class="fa fa-edit"></i> Edit
+                            </button>
+                            <button class="btn btn-sm btn-danger" @click="openDeleteModal(data)">
+                                <i class="fa fa-trash"></i> Delete
+                            </button>
+                        </template>
+                    </DataTable>
+
+                    <PaginationControls :currentPage="currentPage" :perPage="perPage"
+                        :total="permissionStore.permissions.totalRecords" @pageChangeFn="handlePageChange" />
                 </div>
             </div>
         </div>
@@ -69,12 +60,15 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { usePermissionStore } from '@/store/permissionStore';
 import AdminLayout from '@/layouts/AdminLayout.vue';
 import BaseModal from '@/components/layout/admin/modal/BaseModal.vue';
 import { Field, ErrorMessage, useForm } from 'vee-validate';
 import * as yup from 'yup';
+import DataTable from '@/components/layout/admin/table/DataTable.vue';
+import PaginationControls from '@/components/layout/admin/table/PaginationControls.vue';
+import TableControls from '@/components/layout/admin/table/TableControls.vue';
 
 const permissionStore = usePermissionStore();
 const showFormModal = ref(false);
@@ -82,16 +76,77 @@ const showDeleteModal = ref(false);
 const editingPermission = ref(null);
 const permissionToDelete = ref(null);
 
+// Table Reactive state
+const currentPage = ref(1);
+const perPage = ref(10);
+const searchBox = ref('');
+const sortKey = ref('id');
+const sortDirection = ref('asc');
+
+const columns = ref([
+    { key: 'id', label: '#', sortable: true },
+    { key: 'name', label: 'Name', sortable: true },
+    { key: 'description', label: 'Description', sortable: true },
+    { key: 'created_at', label: 'Created At', sortable: true },
+    { key: 'actions', label: 'Actions', sortable: false }
+]);
+
+// Watchers
+watch([currentPage, perPage, sortKey, sortDirection], fetchPermissions);
+watch(searchBox, (newVal) =>
+{
+    setTimeout(() =>
+    {
+        currentPage.value = 1;
+        fetchPermissions();
+    }, 300);
+});
+
+// Methods
+function handleSort(key)
+{
+    if (sortKey.value === key)
+    {
+        sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc';
+    } else
+    {
+        sortKey.value = key;
+        sortDirection.value = 'asc';
+    }
+}
+
+function handlePageChange(page)
+{
+    currentPage.value = page;
+}
+
+function handlePerPageChange(newPerPage)
+{
+    perPage.value = newPerPage;
+    currentPage.value = 1;
+}
+
+async function fetchPermissions()
+{
+    await permissionStore.fetchPermissions({
+        page: currentPage.value,
+        perPage: perPage.value,
+        search: searchBox.value,
+        sortBy: sortKey.value,
+        sortDirection: sortDirection.value
+    });
+}
+
+// Initial fetch
+onMounted(async () =>
+{
+    await fetchPermissions();
+});
+
 // Form schema validation
 const permissionSchema = yup.object({
     name: yup.string().required('Name is required').min(3).max(20),
     description: yup.string().required('Description is required').max(255),
-});
-
-// Fetch Permissions data when component is mounted
-onMounted(async () =>
-{
-    await permissionStore.fetchPermissions();
 });
 
 // Open modals

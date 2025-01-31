@@ -2,9 +2,9 @@ import api from '@/services/axios.js';
 
 const permissionService = {
 
-    async fetchPermissions()
+    async fetchPermissions(params)
     {
-        const response = await api.get(`/permissions`);
+        const response = await api.get(`/permissions`, { params });
         return response.data;
     },
     async createPermission(data)

@@ -18,7 +18,7 @@
                 <tbody>
                     <tr v-for="(item, index) in data" :key="index">
                         <td v-for="column in columns" :key="column.key">
-                            <slot :name="column.key" :roleData="item">
+                            <slot :name="column.key" :data="item">
                                 {{ item[column.key] }}
                             </slot>
                         </td>
