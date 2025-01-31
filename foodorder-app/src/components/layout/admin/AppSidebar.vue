@@ -57,29 +57,42 @@
             </li> -->
           </ul>
         </li>
+        <li class="treeview"
+          :class="{ active: isTreeviewActive(['admin.coupons.index', 'admin.coupons.create', 'admin.coupons.edit']) }">
+          <a href="#">
+            <i class="fa fa-gift"></i>
+            <span>Coupon Management</span>
+            <span class="pull-right-container">
+              <i class="fa fa-angle-left pull-right"></i>
+            </span>
+          </a>
+          <ul class="treeview-menu">
+            <li :class="{ active: isActive('admin.coupons.index') }">
+              <router-link :to="{ name: 'admin.coupons.index' }">
+                <i class="fa fa-circle-o"></i> Coupons
+              </router-link>
+            </li>
+            <li :class="{ active: isActive('admin.coupons.create') || isActive('admin.coupons.edit') }">
+              <router-link
+                :to="{ name: editingId ? 'admin.coupons.edit' : 'admin.coupons.create', params: editingId ? { id: editingId } : {} }">
+                <i class="fa fa-circle-o"></i> {{ editingId ? 'Edit Coupon' : 'Create Coupon' }}
+              </router-link>
+            </li>
+          </ul>
+        </li>
       </ul>
     </section>
   </aside>
 </template>
 
 <script setup>
-import { useRoute } from 'vue-router';
 import userImage from '@/assets/admin/dist/img/user2-160x160.jpg';
 import { onMounted } from 'vue';
+import useEditingId from '@/composables/useEditingId';
+import useRouteHelpers from '@/composables/useRouteHelpers';
 
-const route = useRoute();
-
-// Check if the current route matches the given route name
-const isActive = (routeName) =>
-{
-  return route.name === routeName;
-};
-
-// Check if any of the child routes are active for treeview
-const isTreeviewActive = (routeNames) =>
-{
-  return routeNames.includes(route.name);
-};
+const { editingId } = useEditingId(['admin.coupons.edit']);
+const { isActive, isTreeviewActive } = useRouteHelpers();
 
 onMounted(() =>
 {

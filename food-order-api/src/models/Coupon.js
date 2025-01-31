@@ -1,4 +1,5 @@
 const pool = require('../config/database');
+const PaginationHelper = require('../helpers/paginationHelper');
 
 class Coupon
 {
@@ -37,10 +38,27 @@ class Coupon
         await pool.execute('DELETE FROM coupons WHERE id = ?', [id]);
     }
 
-    static async getAll()
+    static async getAll(options)
     {
-        const [rows] = await pool.execute('SELECT * FROM coupons');
-        return rows;
+        const pagination = new PaginationHelper(options);
+        // Generate WHERE clause and parameters
+        const { whereClause, params } = pagination.getWhereClause(['name']);
+
+        // Query to count total records
+        const [countRows] = await pool.execute(
+            `SELECT COUNT(*) as total FROM coupons ${whereClause}`,
+            params
+        );
+        const totalRecords = countRows[0].total;
+
+        // Query to fetch paginated data
+        const [data] = await pool.execute(
+            `SELECT * FROM coupons ${whereClause} ${pagination.getSortKeyClause()} ${pagination.getLimitOffset()}`,
+            params
+        );
+
+        // Format and return paginated response
+        return pagination.formatResponse(data, totalRecords);
     }
 }
 

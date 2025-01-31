@@ -16,11 +16,11 @@ class CouponService
         }
     }
 
-    static async getAll()
+    static async getAll(options)
     {
         try
         {
-            return await Coupon.getAll();
+            return await Coupon.getAll(options);
         } catch (error)
         {
             logger.error('Error fetching coupons:', error);
@@ -30,14 +30,15 @@ class CouponService
 
     static async update(id, data)
     {
+        const coupon = await Coupon.findById(id);
+        if (!coupon) throw CustomError.notFound("Coupon not found", 404);
+
+        const existingCoupon = await Coupon.findByName(data.name);
+
+        if (existingCoupon && existingCoupon.id != id) throw CustomError.conflict(`Coupon with name "${data.name}" already exists`);
+
         try
         {
-            const coupon = await Coupon.findById(id);
-            if (!coupon)
-            {
-                throw new CustomError("Coupon not found", 404);
-            }
-
             return await Coupon.update(id, data);
         } catch (error)
         {

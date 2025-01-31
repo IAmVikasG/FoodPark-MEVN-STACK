@@ -21,6 +21,21 @@ const routes = [
                 name: 'admin.permissions.index',
                 component: () => import('@/views/admin/permissions/Index.vue'),
             },
+            {
+                path: 'coupons',
+                name: 'admin.coupons.index',
+                component: () => import('@/views/admin/coupons/Index.vue'),
+            },
+            {
+                path: 'coupons/create',
+                name: 'admin.coupons.create',
+                component: () => import('@/views/admin/coupons/Create.vue'),
+            },
+            {
+                path: 'coupons/:id/edit',
+                name: 'admin.coupons.edit',
+                component: () => import('@/views/admin/coupons/Create.vue'),
+            },
         ],
     },
     {
