@@ -134,12 +134,20 @@ onMounted(async () =>
 
 const saveCoupon = handleSubmit(async (formValues) =>
 {
-    if (isEditing.value)
+    try
     {
-        await couponStore.updateCoupon(couponId.value, formValues);
-    } else
+        if (isEditing.value)
+        {
+            await couponStore.updateCoupon(couponId.value, formValues);
+        } else
+        {
+            await couponStore.createCoupon(formValues);
+        }
+        resetForm();
+        router.push({ name: 'admin.coupons.index' }); // Redirect after save
+    } catch (error)
     {
-        await couponStore.createCoupon(formValues);
+        console.error('Error saving coupon:', error);
     }
 });
 </script>

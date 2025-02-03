@@ -8,6 +8,9 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      $: 'jquery',
+      jQuery: 'jquery',
+      'window.jQuery': 'jquery'
     },
   }
 })

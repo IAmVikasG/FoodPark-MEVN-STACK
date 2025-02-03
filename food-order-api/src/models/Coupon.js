@@ -1,5 +1,5 @@
 const pool = require('../config/database');
-const PaginationHelper = require('../helpers/paginationHelper');
+const DataTableService = require('../services/dataTableService');
 
 class Coupon
 {
@@ -18,6 +18,12 @@ class Coupon
     static async findById(id)
     {
         const [rows] = await pool.execute('SELECT * FROM coupons WHERE id = ?', [id]);
+        return rows[0];
+    }
+
+    static async findByName(name)
+    {
+        const [rows] = await pool.execute('SELECT * FROM coupons WHERE name = ?', [name]);
         return rows[0];
     }
 
@@ -40,25 +46,58 @@ class Coupon
 
     static async getAll(options)
     {
-        const pagination = new PaginationHelper(options);
-        // Generate WHERE clause and parameters
-        const { whereClause, params } = pagination.getWhereClause(['name']);
+        const dataTableService = new DataTableService({
+            baseQuery: 'SELECT * FROM coupons',
+            searchColumns: ['name'], // Add other searchable columns
+            defaultOrder: { column: 'created_at', dir: 'desc' }
+        });
 
-        // Query to count total records
-        const [countRows] = await pool.execute(
-            `SELECT COUNT(*) as total FROM coupons ${whereClause}`,
-            params
-        );
-        const totalRecords = countRows[0].total;
+        const {
+            query,
+            countQuery,
+            queryParams,
+            countParams,
+            draw,
+            page,
+            limit,
+            order
+        } = await dataTableService.process(options);
 
-        // Query to fetch paginated data
-        const [data] = await pool.execute(
-            `SELECT * FROM coupons ${whereClause} ${pagination.getSortKeyClause()} ${pagination.getLimitOffset()}`,
-            params
-        );
 
-        // Format and return paginated response
-        return pagination.formatResponse(data, totalRecords);
+        // Execute both queries in parallel
+        const [data, totalRecords, filteredRecords] = await Promise.all([
+            this.executeQuery(query, queryParams),
+            this.getTotalRecords(),
+            this.executeCountQuery(countQuery, countParams)
+        ]);
+
+        return {
+            data,
+            draw: parseInt(draw),
+            recordsTotal: totalRecords,
+            recordsFiltered: filteredRecords,
+            order, // Pass the order property
+            page,
+            limit
+        };
+    }
+
+    static async executeQuery(query, params)
+    {
+        const [rows] = await pool.query(query, params);
+        return rows;
+    }
+
+    static async executeCountQuery(query, params)
+    {
+        const [result] = await pool.execute(query, params);
+        return result[0].total;
+    }
+
+    static async getTotalRecords()
+    {
+        const [result] = await pool.execute('SELECT COUNT(*) as total FROM coupons');
+        return result[0].total;
     }
 }
 

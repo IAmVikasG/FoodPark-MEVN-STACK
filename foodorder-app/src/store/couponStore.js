@@ -6,13 +6,7 @@ import { formatDate } from '@/utils/helpers';
 export const useCouponStore = defineStore('coupon', {
     state: () => ({
         selectedCoupon: null,
-        coupons: {
-            data: [],
-            currentPage: 1,
-            perPage: 10,
-            totalRecords: 0,
-            totalPages: 1
-        }
+        coupons: null
     }),
 
     persist: [
@@ -35,15 +29,8 @@ export const useCouponStore = defineStore('coupon', {
         {
             try
             {
-                const { data: { data, currentPage, perPage, totalRecords, totalPages } } = await couponService.fetchCoupons(params);
-
-                this.coupons = {
-                    data: data,
-                    currentPage: currentPage,
-                    perPage: perPage,
-                    totalRecords: totalRecords,
-                    totalPages: totalPages
-                };
+                const { data } = await couponService.fetchCoupons(params);
+                this.coupons = data;
                 handleSuccess('Coupons fetched successfully.');
             } catch (error)
             {

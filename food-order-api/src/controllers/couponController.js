@@ -8,17 +8,9 @@ class CouponController
 {
     static index = asyncHandler(async (req, res) =>
     {
-        const options = {
-            page: req.query.page,
-            perPage: req.query.perPage,
-            searchQuery: req.query.search,
-            sortKey: req.query.sortKey,
-            sortDirection: req.query.sortDirection,
-            filters: req.query.filters ? JSON.parse(req.query.filters) : {},
-        };
-
-        const coupons = await CouponService.getAll(options);
-        return ResponseFormatter.success(res, coupons, 'Coupons retrieved successfully');
+        const { query } = req;
+        const result = await CouponService.getAll(query);
+        return ResponseFormatter.success(res, result, 'Coupons retrieved successfully');
     });
 
     static store = asyncHandler(async (req, res) =>
