@@ -1,53 +1,23 @@
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const User = require('../models/User');
-const RefreshToken = require('../models/RefreshToken');
 const EmailService = require('./emailService');
 const CustomError = require('../utils/customError');
 const logger = require('../utils/logger');
+const { verifyRefreshToken, generateTokens, storeRefreshToken, revokeToken, decodeToken, revokeAllTokens, verifyAccessToken } = require('../helpers/tokenHelper');
+const { comparePassword } = require('../helpers/authHelper');
 
 class AuthService
 {
-    static generateTokens(user)
-    {
-        const accessToken = jwt.sign(
-            { id: user.id, email: user.email, roles: user.roles },
-            process.env.JWT_SECRET,
-            { expiresIn: process.env.JWT_ACCESS_EXPIRE || '15m' }
-        );
-
-        const refreshToken = jwt.sign(
-            { id: user.id },
-            process.env.JWT_REFRESH_SECRET,
-            { expiresIn: process.env.JWT_REFRESH_EXPIRE || '7d' }
-        );
-
-        return { accessToken, refreshToken };
-    }
-
     static async login(email, password)
     {
         const user = await User.findByEmail(email);
-        if (!user)
-        {
-            throw CustomError.notFound('User not found');
-        }
+        if (!user) throw CustomError.notFound('User not found');
 
-        const isPasswordValid = await bcrypt.compare(password, user.password);
-        if (!isPasswordValid)
-        {
-            throw CustomError.badRequest('Invalid password');
-        }
-
-        const { accessToken, refreshToken } = this.generateTokens(user);
-
-        // Store refresh token in database
-        await RefreshToken.create({
-            user_id: user.id,
-            token: refreshToken,
-            expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
-        });
+        const isPasswordValid = await comparePassword(password, user.password);
+        if (!isPasswordValid) throw CustomError.badRequest('Invalid password');
+        const { accessToken, refreshToken } = generateTokens(user);
+        await storeRefreshToken(user.id, refreshToken)
 
         return {
             user: {
@@ -62,34 +32,17 @@ class AuthService
         };
     }
 
-    static async refreshToken(refreshToken)
+    static async refreshToken(refreshToken, accessToken)
     {
         try
         {
-            // Verify refresh token
-            const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-
-            // Check if token exists in database and is not expired
-            const storedToken = await RefreshToken.findValidToken(refreshToken);
-            if (!storedToken)
-            {
-                throw CustomError.badRequest('Invalid refresh token');
-            }
-
-            const user = await User.findById(decoded.id);
-            if (!user)
-            {
-                throw CustomError.notFound('User not found');
-            }
-
-            // Generate new tokens
-            const tokens = this.generateTokens(user);
-
-            // Update refresh token in database
-            await RefreshToken.update(storedToken.id, {
-                token: tokens.refreshToken,
-                expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-            });
+            const decoded = await verifyRefreshToken(refreshToken);
+            const user = await User.findById(decoded.userId);
+            if (!user) throw CustomError.notFound('User not found');
+            const tokens = generateTokens(user);
+            await revokeToken(accessToken, 'refresh');
+            await revokeToken(refreshToken, 'refresh');
+            await storeRefreshToken(decoded.userId, tokens.refreshToken);
 
             return tokens;
         } catch (error)
@@ -98,41 +51,31 @@ class AuthService
         }
     }
 
-    static async logout(refreshToken, userId)
+    static async logout(accessToken, refreshToken)
     {
-        const token = await RefreshToken.findValidToken(refreshToken);
-
-        if (!token)
-        {
-            throw CustomError.badRequest('Invalid refresh token');
-        }
-
-        // Verify the token belongs to the user making the request
-        if (token.user_id !== userId)
-        {
-            throw CustomError.forbidden('Forbidden');
-        }
-
-        await RefreshToken.delete(refreshToken);
+        await revokeToken(accessToken);
+        if (refreshToken.length > 0) await revokeToken(refreshToken);
     }
 
-    static async logoutAll(userId)
+    static async logoutAll(accessToken, refreshToken, userId)
     {
-        await RefreshToken.deleteAllForUser(userId);
+        if (refreshToken) await verifyRefreshToken(refreshToken);
+        const accessTokenDecoded = decodeToken(accessToken);
+        const refreshTokenDecoded = decodeToken(refreshToken);
+        if (accessTokenDecoded.userId != userId || refreshTokenDecoded.userId != userId) throw CustomError.forbidden();
+        this.logout(accessToken, refreshToken)
+        await revokeAllTokens(userId);
     }
 
     static async register(userData)
     {
         const existingUser = await User.findByEmail(userData.email);
-        if (existingUser)
-        {
-            throw CustomError.conflict('Email already registered');
-        }
+        if (existingUser) throw CustomError.conflict('Email already registered');
 
         try
         {
             const user = await User.create(userData);
-            const token = this.generateTokens(user);
+            const token = generateTokens(user);
 
             // Send welcome email
             await EmailService.sendWelcomeEmail(user.email, user.name);
@@ -200,10 +143,7 @@ class AuthService
     static async getProfile(userId)
     {
         const user = await User.findById(userId);
-        if (!user)
-        {
-            throw CustomError.notFound('User not found');
-        }
+        if (!user) throw CustomError.notFound('User not found');
         return user;
     }
 }

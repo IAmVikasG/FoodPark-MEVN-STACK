@@ -2,11 +2,28 @@ import { defineStore } from 'pinia';
 import authService from '@/services/authService';
 import { handleSuccess, handleError } from '@/utils/helpers.js';
 
+const TOKEN_KEYS = {
+    ACCESS: 'accessToken',
+    REFRESH: 'refreshToken',
+};
+
+const setTokens = (accessToken, refreshToken) =>
+{
+    if (accessToken) localStorage.setItem(TOKEN_KEYS.ACCESS, accessToken);
+    if (refreshToken) localStorage.setItem(TOKEN_KEYS.REFRESH, refreshToken);
+};
+
+const clearTokens = () =>
+{
+    localStorage.removeItem(TOKEN_KEYS.ACCESS);
+    localStorage.removeItem(TOKEN_KEYS.REFRESH);
+};
+
 export const useAuthStore = defineStore('auth', {
     state: () => ({
         user: null,
-        accessToken: localStorage.getItem('accessToken') || null,
-        refreshToken: localStorage.getItem('refreshToken') || null,
+        accessToken: localStorage.getItem(TOKEN_KEYS.ACCESS) || null,
+        refreshToken: localStorage.getItem(TOKEN_KEYS.REFRESH) || null,
     }),
     actions: {
         async login(credentials)
@@ -14,33 +31,40 @@ export const useAuthStore = defineStore('auth', {
             try
             {
                 const { data: { accessToken, refreshToken, user } } = await authService.login(credentials);
+
                 this.accessToken = accessToken;
                 this.refreshToken = refreshToken;
                 this.user = user;
 
-                localStorage.setItem('accessToken', accessToken);
-                localStorage.setItem('refreshToken', refreshToken);
-
+                setTokens(accessToken, refreshToken);
                 handleSuccess('Successfully logged in!');
             } catch (error)
             {
-                handleError(error);
+                handleError(error, 'Login failed');
+                throw error;
             }
         },
 
         async refreshAccessToken()
         {
+            if (!this.refreshToken)
+            {
+                handleError(new Error('No refresh token available.'));
+                this.logout();
+                return;
+            }
+
             try
             {
-                const { data: {accessToken, refreshToken} } = await authService.refreshToken(this.refreshToken);
+                const { data: { accessToken, refreshToken } } = await authService.refreshToken(this.refreshToken);
+
                 this.accessToken = accessToken;
                 this.refreshToken = refreshToken;
 
-                localStorage.setItem('accessToken', accessToken);
-                localStorage.setItem('refreshToken', refreshToken);
+                setTokens(accessToken, refreshToken);
             } catch (error)
             {
-                handleError(error);
+                handleError(error, 'Token refresh failed');
                 this.logout();
             }
         },
@@ -53,7 +77,8 @@ export const useAuthStore = defineStore('auth', {
                 this.user = user;
             } catch (error)
             {
-                handleError(error);
+                handleError(error, 'Failed to fetch user information');
+                this.logout();
             }
         },
 
@@ -61,20 +86,20 @@ export const useAuthStore = defineStore('auth', {
         {
             try
             {
-                if (this.refreshToken) {
+                if (this.refreshToken)
+                {
                     await authService.logout(this.refreshToken);
                     handleSuccess('Successfully logged out.');
                 }
             } catch (error)
             {
-                handleError(error);
+                handleError(error, 'Logout failed');
             } finally
             {
                 this.accessToken = null;
                 this.refreshToken = null;
                 this.user = null;
-                localStorage.removeItem('accessToken');
-                localStorage.removeItem('refreshToken');
+                clearTokens();
             }
         },
     }

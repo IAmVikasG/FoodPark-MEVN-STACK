@@ -6,8 +6,9 @@ class AuthController
 {
     static refreshToken = asyncHandler(async (req, res) =>
     {
+        const requestedAccessToken = req.headers.authorization?.split(' ')[1];
         const { refreshToken: requestedRefreshToken } = req.body;
-        const { accessToken, refreshToken } = await AuthService.refreshToken(requestedRefreshToken);
+        const { accessToken, refreshToken } = await AuthService.refreshToken(requestedRefreshToken, requestedAccessToken);
         return ResponseFormatter.success(
             res,
             { accessToken, refreshToken },
@@ -60,14 +61,16 @@ class AuthController
 
     static getProfile = asyncHandler(async (req, res) =>
     {
-        const user = await AuthService.getProfile(req.userId);
+        const user = await AuthService.getProfile(req.auth.userId);
         return ResponseFormatter.success(res, user);
     });
 
     static logout = asyncHandler(async (req, res) =>
     {
+        const accessToken = req.headers.authorization?.split(' ')[1];
         const { refreshToken } = req.body;
-        await AuthService.logout(refreshToken, req.userId);
+
+        await AuthService.logout(accessToken, refreshToken);
         return ResponseFormatter.success(
             res,
             null,
@@ -77,7 +80,9 @@ class AuthController
 
     static logoutAll = asyncHandler(async (req, res) =>
     {
-        await AuthService.logoutAll(req.userId);
+        const accessToken = req.headers.authorization?.split(' ')[1];
+        const { refreshToken } = req.body;
+        await AuthService.logoutAll(accessToken, refreshToken, req.auth.userId);
         return ResponseFormatter.success(
             res,
             null,

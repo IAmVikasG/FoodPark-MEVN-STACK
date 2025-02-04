@@ -1,6 +1,7 @@
 const pool = require('../config/database');
 const bcrypt = require('bcryptjs');
 const Role = require('./Role');
+const { hashPassword } = require('../helpers/authHelper');
 
 class User
 {
@@ -69,7 +70,7 @@ class User
     static async create(userData)
     {
         const { name, email, password } = userData;
-        const hashedPassword = await bcrypt.hash(password, 12);
+        const hashedPassword = await hashPassword(password, 12);
 
         // Insert user
         const [userResult] = await pool.execute(

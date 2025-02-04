@@ -56,7 +56,7 @@ class SliderController
         // After successful upload and validation, create slider
         const result = await SliderService.create({
             ...req.body,
-            created_by: req.userId,
+            created_by: req.auth.userId,
             file: req.file, // Pass the uploaded file info to service
         });
 
@@ -91,7 +91,7 @@ class SliderController
         // Prepare slider data for update
         const sliderData = {
             ...req.body, // Updated fields from the request body
-            created_by: req.userId, // Add the current user's ID
+            created_by: req.auth.userId, // Add the current user's ID
         };
 
         // Add file data if a new image is uploaded

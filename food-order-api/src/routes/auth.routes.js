@@ -46,6 +46,7 @@ router.post('/logout',
 
 router.post('/logout-all',
     authenticate,
+    validateRequest(authValidation.refreshToken),
     AuthController.logoutAll
 );
 

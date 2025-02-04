@@ -61,7 +61,7 @@ router.beforeEach(async (to, from, next) =>
     const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
     const requiresAdminOrVendor = to.matched.some(record => record.meta.requiresAdminOrVendor);
 
-    // Handle login route access
+    // Handle the login route
     if (to.name === 'admin.login')
     {
         if (authStore.accessToken)
@@ -71,31 +71,30 @@ router.beforeEach(async (to, from, next) =>
         return next();
     }
 
-    if (!requiresAuth) return next();
-
-    try
+    if (!requiresAuth)
     {
-        if (!authStore.user && authStore.refreshToken)
-        {
-            await authStore.fetchUserInfo();
-        }
-
-        if (requiresAdminOrVendor)
-        {
-            const roles = authStore.user?.roles || [];
-            if (!roles.includes('admin') && !roles.includes('vendor'))
-            {
-                await authStore.logout();
-                return next({ name: 'admin.login' });
-            }
-        }
-
-        return next();
-    } catch (error)
-    {
-        await authStore.logout();
-        return next({ name: 'admin.login' });
+        return next(); // No auth required
     }
+
+    // Fetch user info if only refreshToken is available
+    if (!authStore.user && authStore.refreshToken)
+    {
+        await authStore.fetchUserInfo();
+    }
+
+    // Handle Admin or Vendor role-based access
+    if (requiresAdminOrVendor)
+    {
+        const roles = authStore.user?.roles || [];
+        if (!roles.includes('admin') && !roles.includes('vendor'))
+        {
+            await authStore.logout();
+            return next({ name: 'admin.login' });
+        }
+    }
+
+    next();
 });
+
 
 export default router;
