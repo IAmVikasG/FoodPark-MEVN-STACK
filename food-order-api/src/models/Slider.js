@@ -1,4 +1,5 @@
 const pool = require('../config/database');
+const DataTableService = require('../services/dataTableService');
 
 class Slider
 {
@@ -132,25 +133,63 @@ class Slider
         return result.affectedRows > 0;
     }
 
-    static async getAll()
+    static async getAll(options)
     {
-        const [sliders] = await pool.execute(
-            `SELECT sl.id, sl.offer, sl.title, sl.subtitle, sl.description, sl.button_link,
-            sl.status, u.name AS created_by, sl.created_at,
-            GROUP_CONCAT(si.image_url) AS images
-            FROM sliders sl
-            JOIN users u ON u.id = sl.created_by
-            LEFT JOIN slider_images si ON sl.id = si.slider_id
-            GROUP BY sl.id`
-        );
+        const baseUrl = process.env.APP_URL;
 
-        return sliders.length
-            ? sliders.map(slider => ({
-                ...slider,
-                images: slider.images ? slider.images.split(',') : []
-            }))
-            : [];
+        const dataTableService = new DataTableService({
+            baseQuery: `SELECT sl.id, sl.offer, sl.title, sl.subtitle, sl.description, sl.button_link, sl.status, u.name AS created_by, sl.created_at, GROUP_CONCAT(CONCAT('${baseUrl}/', si.image_url)) AS images FROM sliders sl`,
+            joins: 'JOIN users u ON u.id = sl.created_by LEFT JOIN slider_images si ON sl.id = si.slider_id',
+            searchColumns: ['sl.title', 'sl.subtitle', 'u.name'],
+            defaultOrder: { column: 'sl.created_at', dir: 'desc' },
+            groupBy: 'GROUP BY sl.id'
+        });
+
+        const {
+            query,
+            countQuery,
+            queryParams,
+            countParams,
+            draw,
+            page,
+            limit
+        } = await dataTableService.process(options);
+
+        // Execute both queries in parallel
+        const [data, countResult] = await Promise.all([
+            this.executeQuery(query, queryParams),
+            this.executeCountQuery(countQuery, countParams)
+        ]);
+
+        // Extract total and filtered counts
+        const totalRecords = countResult[0].total;
+        const filteredRecords = countResult[0].total;
+
+        return {
+            data,
+            draw: parseInt(draw, 10),
+            recordsTotal: totalRecords,
+            recordsFiltered: filteredRecords,
+            page,
+            limit
+        };
     }
+
+    static async executeQuery(query, params)
+    {
+        const [rows] = await pool.query(query, params);
+        return rows.map(row => ({
+            ...row,
+            images: row.images ? row.images.split(',') : []
+        }));
+    }
+
+    static async executeCountQuery(query, params)
+    {
+        const [result] = await pool.query(query, params);
+        return result;
+    }
+
 }
 
 module.exports = Slider;

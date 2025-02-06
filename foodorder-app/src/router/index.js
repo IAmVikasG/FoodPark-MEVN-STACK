@@ -36,6 +36,21 @@ const routes = [
                 name: 'admin.coupons.edit',
                 component: () => import('@/views/admin/coupons/Create.vue'),
             },
+            {
+                path: 'sliders',
+                name: 'admin.sliders.index',
+                component: () => import('@/views/admin/sliders/Index.vue'),
+            },
+            {
+                path: 'sliders/create',
+                name: 'admin.sliders.create',
+                component: () => import('@/views/admin/sliders/Create.vue'),
+            },
+            {
+                path: 'sliders/:id/edit',
+                name: 'admin.sliders.edit',
+                component: () => import('@/views/admin/sliders/Create.vue'),
+            },
         ],
     },
     {

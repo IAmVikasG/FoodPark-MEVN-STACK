@@ -13,7 +13,8 @@ class SliderController
      */
     static index = asyncHandler(async (req, res) =>
     {
-        const sliders = await SliderService.getAll();
+        const { query } = req;
+        const sliders = await SliderService.getAll(query);
         return ResponseFormatter.success(
             res,
             sliders,

@@ -2,15 +2,17 @@ class DataTableService
 {
     constructor({
         baseQuery,
-        joins = [],
+        joins = '',
         searchColumns = [],
         defaultOrder = { column: 'id', dir: 'asc' },
+        groupBy = '', // Added groupBy parameter
     })
     {
         this.baseQuery = baseQuery;
         this.joins = joins;
         this.searchColumns = searchColumns;
         this.defaultOrder = defaultOrder;
+        this.groupBy = groupBy; // Store groupBy
     }
 
     async process(requestParams)
@@ -23,16 +25,11 @@ class DataTableService
             search = { value: '' },
         } = requestParams;
 
-        let query = `${this.baseQuery} WHERE 1=1`; // Using 1=1 ensures that additional conditions can be appended with consistent syntax
-        let countQuery = `SELECT COUNT(*) as total FROM (${this.baseQuery}) AS derived_table WHERE 1=1`;
+        let query = `${this.baseQuery} ${this.joins} WHERE 1=1`;
+        let countQuery = `SELECT COUNT(*) as total FROM (${this.baseQuery} ${this.joins} WHERE 1=1) AS derived_table`; // Initial count query without conditions
+
         const params = [];
         const countParams = [];
-
-        // Add joins
-        if (this.joins.length > 0)
-        {
-            query += ' ' + this.joins.join(' ');
-        }
 
         // Handle search
         if (search.value && this.searchColumns.length > 0)
@@ -41,21 +38,28 @@ class DataTableService
                 .map((col) => `${col} LIKE ?`)
                 .join(' OR ');
 
-            // Append search conditions
             query += ` AND (${searchCondition})`;
-            countQuery += ` AND (${searchCondition})`;
+            // Update countQuery to include search conditions in the subquery
+            countQuery = `SELECT COUNT(*) as total FROM (${this.baseQuery} ${this.joins} WHERE 1=1 AND (${searchCondition})) AS derived_table`;
 
             const searchParam = `%${search.value}%`;
             params.push(...Array(this.searchColumns.length).fill(searchParam));
             countParams.push(...Array(this.searchColumns.length).fill(searchParam));
         }
 
-        // Handle sorting
-        if (order.length > 0 && order[0]?.column !== undefined)
+        // Add GROUP BY to main query
+        if (this.groupBy)
         {
-            query += ` ORDER BY ${order[0].column} ${order[0].dir}`; // Use the order property
+            query += ` ${this.groupBy}`;
+            // Include GROUP BY in the count subquery to get accurate count of groups
+            countQuery = `SELECT COUNT(*) as total FROM (${this.baseQuery} ${this.joins} WHERE 1=1 ${search.value ? `AND (${searchCondition})` : ''} ${this.groupBy}) AS filtered_groups`;
         }
-        else
+
+        // Handle sorting
+        if (order.length > 0 && order[0]?.column)
+        {
+            query += ` ORDER BY ${order[0].column} ${order[0].dir}`;
+        } else
         {
             query += ` ORDER BY ${this.defaultOrder.column} ${this.defaultOrder.dir}`;
         }
@@ -70,7 +74,6 @@ class DataTableService
             queryParams: params,
             countParams: countParams,
             draw,
-            order, // Return the order property
             page: Math.ceil(parseInt(start, 10) / parseInt(length, 10)) + 1,
             limit: parseInt(length, 10),
         };

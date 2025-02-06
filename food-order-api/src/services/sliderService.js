@@ -5,9 +5,9 @@ const uploadService = require('../services/uploadService');
 
 class SliderService
 {
-    static async getAll()
+    static async getAll(options)
     {
-        return await Slider.getAll();
+        return await Slider.getAll(options);
     }
 
     static async create(data)

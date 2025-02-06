@@ -50,11 +50,6 @@
                 <i class="fa fa-circle-o"></i> Permissions
               </router-link>
             </li>
-            <!-- <li :class="{ active: isActive('admin.users.index') }">
-              <router-link :to="{ name: 'admin.users.index' }">
-                <i class="fa fa-circle-o"></i> Users
-              </router-link>
-            </li> -->
           </ul>
         </li>
         <li class="treeview"
@@ -76,6 +71,29 @@
               <router-link
                 :to="{ name: editingId ? 'admin.coupons.edit' : 'admin.coupons.create', params: editingId ? { id: editingId } : {} }">
                 <i class="fa fa-circle-o"></i> {{ editingId ? 'Edit Coupon' : 'Create Coupon' }}
+              </router-link>
+            </li>
+          </ul>
+        </li>
+        <li class="treeview"
+          :class="{ active: isTreeviewActive(['admin.sliders.index', 'admin.sliders.create', 'admin.sliders.edit']) }">
+          <a href="#">
+            <i class="fa fa-gift"></i>
+            <span>Slider Management</span>
+            <span class="pull-right-container">
+              <i class="fa fa-angle-left pull-right"></i>
+            </span>
+          </a>
+          <ul class="treeview-menu">
+            <li :class="{ active: isActive('admin.sliders.index') }">
+              <router-link :to="{ name: 'admin.sliders.index' }">
+                <i class="fa fa-circle-o"></i> Sliders
+              </router-link>
+            </li>
+            <li :class="{ active: isActive('admin.sliders.create') || isActive('admin.sliders.edit') }">
+              <router-link
+                :to="{ name: editingId ? 'admin.sliders.edit' : 'admin.sliders.create', params: editingId ? { id: editingId } : {} }">
+                <i class="fa fa-circle-o"></i> {{ editingId ? 'Edit Slider' : 'Create Slider' }}
               </router-link>
             </li>
           </ul>

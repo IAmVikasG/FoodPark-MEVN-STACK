@@ -14,7 +14,8 @@ const couponRoutes = require('./routes/coupon.routes');
 const productCategoryRoutes = require('./routes/productCategory.routes');
 
 const app = express();
-
+// Static files
+app.use(express.static('public/uploads'))
 // Validate Environment Variables
 if (!process.env.PORT)
 {
@@ -23,7 +24,9 @@ if (!process.env.PORT)
 }
 app.use(morgan('dev'));
 // Security Middleware
-app.use(helmet());
+app.use(helmet({
+    crossOriginResourcePolicy: false,
+}));
 app.use(cors({
     origin: [process.env.FRONTEND_URL], // Adjust to your allowed domains
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
