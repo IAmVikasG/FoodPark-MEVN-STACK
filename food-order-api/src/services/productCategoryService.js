@@ -42,6 +42,18 @@ class ProductCategoryService
         }
     }
 
+    static async getParentCategory()
+    {
+        try
+        {
+            return await Category.getAllParentCategories();
+        } catch (error)
+        {
+            logger.error('Error retrieving parent categories:', error);
+            throw new CustomError('Failed to retrieve parent categories', 500);
+        }
+    }
+
     static async index()
     {
         try

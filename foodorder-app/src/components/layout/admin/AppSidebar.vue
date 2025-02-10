@@ -98,6 +98,53 @@
             </li>
           </ul>
         </li>
+        <li class="treeview"
+          :class="{ active: isTreeviewActive(['admin.products.index', 'admin.products.create', 'admin.products.edit', 'admin.productCategories.index', 'admin.productCategories.create', 'admin.productCategories.edit']) }">
+          <a href="#">
+            <i class="fa fa-shopping-bag"></i>
+            <span>Product Management</span>
+            <span class="pull-right-container">
+              <i class="fa fa-angle-left pull-right"></i>
+            </span>
+          </a>
+          <ul class="treeview-menu">
+            <li class="treeview"
+              :class="{ active: isTreeviewActive(['admin.productCategories.index', 'admin.productCategories.create', 'admin.productCategories.edit']) }">
+              <a href="#">
+                <i class="fa fa-list"></i>
+                <span>Product Categories</span>
+                <span class="pull-right-container">
+                  <i class="fa fa-angle-left pull-right"></i>
+                </span>
+              </a>
+              <ul class="treeview-menu">
+                <li :class="{ active: isActive('admin.productCategories.index') }">
+                  <router-link :to="{ name: 'admin.productCategories.index' }">
+                    <i class="fa fa-circle-o"></i> Product Categories
+                  </router-link>
+                </li>
+                <li
+                  :class="{ active: isActive('admin.productCategories.create') || isActive('admin.productCategories.edit') }">
+                  <router-link
+                    :to="{ name: editingId ? 'admin.productCategories.edit' : 'admin.productCategories.create', params: editingId ? { id: editingId } : {} }">
+                    <i class="fa fa-circle-o"></i> {{ editingId ? 'Edit Product Category' : 'Create Product Category' }}
+                  </router-link>
+                </li>
+              </ul>
+            </li>
+            <li :class="{ active: isActive('admin.products.index') }">
+              <router-link :to="{ name: 'admin.products.index' }">
+                <i class="fa fa-circle-o"></i> Products
+              </router-link>
+            </li>
+            <li :class="{ active: isActive('admin.products.create') || isActive('admin.products.edit') }">
+              <router-link
+                :to="{ name: editingId ? 'admin.products.edit' : 'admin.products.create', params: editingId ? { id: editingId } : {} }">
+                <i class="fa fa-circle-o"></i> {{ editingId ? 'Edit Product' : 'Create Product' }}
+              </router-link>
+            </li>
+          </ul>
+        </li>
       </ul>
     </section>
   </aside>
@@ -109,7 +156,7 @@ import { onMounted } from 'vue';
 import useEditingId from '@/composables/useEditingId';
 import useRouteHelpers from '@/composables/useRouteHelpers';
 
-const { editingId } = useEditingId(['admin.coupons.edit']);
+const { editingId } = useEditingId(['admin.coupons.edit', 'admin.sliders.edit', 'admin.products.edit', 'admin.productCategories.edit']);
 const { isActive, isTreeviewActive } = useRouteHelpers();
 
 onMounted(() =>

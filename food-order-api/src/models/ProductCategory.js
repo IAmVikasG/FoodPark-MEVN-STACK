@@ -1,40 +1,73 @@
 const pool = require('../config/database');
-const PaginationHelper = require('../helpers/paginationHelper');
+const DataTableService = require('../services/dataTableService');
 
 class ProductCategory
 {
-    /**
-     * Get paginated categories
-     * @param {object} options - Options for pagination, search, and filters
-     * @returns {object} Paginated response
-     */
+
     static async getAll(options)
     {
-        const pagination = new PaginationHelper(options);
+        const dataTableService = new DataTableService({
+            baseQuery: 'SELECT * FROM product_categories',
+            searchColumns: ['name'], // Add other searchable columns
+            defaultOrder: { column: 'created_at', dir: 'desc' }
+        });
 
-        // Generate WHERE clause and parameters
-        const { whereClause, params } = pagination.getWhereClause(['name', 'description']);
+        const {
+            query,
+            countQuery,
+            queryParams,
+            countParams,
+            draw,
+            page,
+            limit,
+            order
+        } = await dataTableService.process(options);
 
-        // Query to count total records
-        const [countRows] = await pool.execute(
-            `SELECT COUNT(*) as total FROM product_categories ${whereClause}`,
-            params
-        );
-        const totalRecords = countRows[0].total;
 
-        // Query to fetch paginated data
-        const [data] = await pool.execute(
-            `SELECT * FROM product_categories ${whereClause} ${pagination.getSortKeyClause()} ${pagination.getLimitOffset()}`,
-            params
-        );
+        // Execute both queries in parallel
+        const [data, totalRecords, filteredRecords] = await Promise.all([
+            this.executeQuery(query, queryParams),
+            this.getTotalRecords(),
+            this.executeCountQuery(countQuery, countParams)
+        ]);
 
-        // Format and return paginated response
-        return pagination.formatResponse(data, totalRecords);
+        return {
+            data,
+            draw: parseInt(draw),
+            recordsTotal: totalRecords,
+            recordsFiltered: filteredRecords,
+            order, // Pass the order property
+            page,
+            limit
+        };
+    }
+
+    static async executeQuery(query, params)
+    {
+        const [rows] = await pool.query(query, params);
+        return rows;
+    }
+
+    static async executeCountQuery(query, params)
+    {
+        const [result] = await pool.execute(query, params);
+        return result[0].total;
+    }
+
+    static async getTotalRecords()
+    {
+        const [result] = await pool.execute('SELECT COUNT(*) as total FROM product_categories');
+        return result[0].total;
+    }
+
+    static async getAllParentCategories()
+    {
+        return await this.executeQuery('SELECT id, name FROM product_categories WHERE parent_id IS NULL', []);
     }
 
     static async create(data)
     {
-        const { name, slug, description, parent_id, status } = data;
+        const { name, slug, description, parent_id = null, status } = data;
 
         const [result] = await pool.execute(
             `INSERT INTO product_categories (name, slug, description, parent_id, status)

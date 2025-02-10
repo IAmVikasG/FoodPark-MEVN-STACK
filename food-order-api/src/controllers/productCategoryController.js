@@ -8,22 +8,16 @@ class ProductCategoryController
 {
     static index = asyncHandler(async (req, res) =>
     {
-        const options = {
-            page: req.query.page,
-            perPage: req.query.perPage,
-            searchQuery: req.query.search,
-            sortKey: req.query.sortKey,
-            sortDirection: req.query.sortDirection,
-            filters: req.query.filters ? JSON.parse(req.query.filters) : {},
-        };
-
-        const categories = await CategoryService.getAllCategories(options);
+        const { query } = req;
+        const categories = await CategoryService.getAllCategories(query);
         return ResponseFormatter.success(res, categories, 'Categories retrieved successfully');
     });
 
     static store = asyncHandler(async (req, res) =>
     {
         const validation = await validateRequest.validate(categoryValidation.create, req, res);
+        console.log(validation, 'store');
+        
         if (!validation.isValid) return;
 
         const category = await CategoryService.create(req.body);
@@ -55,6 +49,16 @@ class ProductCategoryController
             res,
             null,
             'Category deleted successfully'
+        );
+    });
+
+    static getParentProductCategory = asyncHandler(async (req, res) =>
+    {
+        const category = await CategoryService.getParentCategory();
+        return ResponseFormatter.success(
+            res,
+            category,
+            'Parent Category retrieved successfully'
         );
     });
 }

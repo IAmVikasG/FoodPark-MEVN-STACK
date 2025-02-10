@@ -51,6 +51,36 @@ const routes = [
                 name: 'admin.sliders.edit',
                 component: () => import('@/views/admin/sliders/Create.vue'),
             },
+            {
+                path: 'products',
+                name: 'admin.products.index',
+                component: () => import('@/views/admin/products/Index.vue'),
+            },
+            {
+                path: 'products/create',
+                name: 'admin.products.create',
+                component: () => import('@/views/admin/products/Create.vue'),
+            },
+            {
+                path: 'products/:id/edit',
+                name: 'admin.products.edit',
+                component: () => import('@/views/admin/products/Create.vue'),
+            },
+            {
+                path: 'product-categories',
+                name: 'admin.productCategories.index',
+                component: () => import('@/views/admin/productCategories/Index.vue'),
+            },
+            {
+                path: 'product-categories/create',
+                name: 'admin.productCategories.create',
+                component: () => import('@/views/admin/productCategories/Create.vue'),
+            },
+            {
+                path: 'product-categories/:id/edit',
+                name: 'admin.productCategories.edit',
+                component: () => import('@/views/admin/productCategories/Create.vue'),
+            },
         ],
     },
     {

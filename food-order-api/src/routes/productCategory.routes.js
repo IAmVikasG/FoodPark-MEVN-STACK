@@ -29,5 +29,11 @@ router.delete('/:id',
     ProductCategoryController.delete
 );
 
+router.get('/only-parents',
+    authenticate,
+    authorize('admin'),
+    ProductCategoryController.getParentProductCategory
+);
+
 
 module.exports = router;
